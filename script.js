@@ -304,6 +304,7 @@ async function konfirmasiKirimPesanan() {
     const stokBaru = Math.max(0, itemDipilih.stok - qty);
 
     const orderBaru = {
+        id: Date.now(), // Mengisi kembali ID dengan angka unik berbasis waktu (aman untuk bigint)
         kantin_id: parseInt(itemDipilih.kantinId, 10),
         nama_pemesan: currentUser.nama,
         info_pemesan: currentUser.kelas,
