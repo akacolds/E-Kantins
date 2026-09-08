@@ -1,6 +1,6 @@
 // ================= INISIALISASI SUPABASE =================
 const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY 'sb_publishable_4mDuRGKRn_va09DOIe4wiQ_RIgO-1sd';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4mDuRGKRn_va09DOIe4wiQ_RIgO-1sd';
 
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
