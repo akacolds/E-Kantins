@@ -5,45 +5,8 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4mDuRGKRn_va09DOIe4wiQ_RIgO-1sd
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// ================= DATA TEMPLATE STANDAR =================
-const DEFAULT_MENU_TEMPLATE = [
-    {
-        id: 1,
-        kantinId: 1,
-        namaKantin: "Kantin 1 (Bu Siti)",
-        nama: "Aneka Olahan Mie",
-        kategori: "Mie",
-        desc: "Pilihan: Aceh, Geprek, Rendang, Kuah Soto",
-        harga: 7000,
-        stok: 20,
-        foto: "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400",
-        varianList: ["Aceh", "Geprek", "Rendang", "Kuah Soto", "Goreng Original"]
-    },
-    {
-        id: 2,
-        kantinId: 1,
-        namaKantin: "Kantin 1 (Bu Siti)",
-        nama: "Aneka Minuman Segar",
-        kategori: "Minuman",
-        desc: "Pilihan minuman dingin menyegarkan",
-        harga: 3000,
-        stok: 30,
-        foto: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
-        varianList: ["Es Teh Manis", "Nutrisari Jeruk", "Kopi Susu Dingin"]
-    },
-    {
-        id: 3,
-        kantinId: 2,
-        namaKantin: "Kantin 2 (Pak Joko)",
-        nama: "Aneka Nasi & Ayam",
-        kategori: "Nasi",
-        desc: "Ayam Geprek, Nasi Campur Sayur",
-        harga: 12000,
-        stok: 15,
-        foto: "https://images.unsplash.com/photo-1562967914-608f82629710?w=400",
-        varianList: ["Nasi Ayam Geprek", "Nasi Campur Sayur", "Nasi Uduk"]
-    }
-];
+// ================= DATA TEMPLATE KOSONG (MURNI SUPABASE) =================
+const DEFAULT_MENU_TEMPLATE = [];
 
 // ================= STATE MANAGEMENT =================
 let menuData = [];
@@ -54,10 +17,9 @@ let itemDipilih = null;
 // Ambil Data Menu dari Supabase
 async function loadMenu() {
     const { data, error } = await _supabase.from('menu_kantin').select('*');
-    if (error || !data || data.length === 0) {
-        return DEFAULT_MENU_TEMPLATE;
+    if (error || !data) {
+        return [];
     }
-    // Mapping kolom database ke format objek frontend jika berbeda
     return data.map(m => ({
         id: m.id,
         kantinId: m.kantin_id,
@@ -108,30 +70,13 @@ function saveToStorage() {
 }
 
 async function muatUlangDataDummy() {
-    if (confirm("Reset ulang semua data ke kondisi awal?")) {
+    if (confirm("Reset sesi login saat ini?")) {
         localStorage.removeItem('kantin_user_session');
         currentUser = null;
-        
-        // Masukkan data template awal ke Supabase jika kosong
-        for (let item of DEFAULT_MENU_TEMPLATE) {
-            await _supabase.from('menu_kantin').upsert({
-                id: item.id,
-                kantin_id: item.kantinId,
-                nama_kantin: item.namaKantin,
-                nama: item.nama,
-                kategori: item.kategori,
-                description: item.desc,
-                harga: item.harga,
-                stok: item.stok,
-                foto: item.foto,
-                varian_list: item.varianList
-            });
-        }
-        
         menuData = await loadMenu();
         orderData = await loadOrders();
         cekSesi();
-        alert("Data berhasil di-reset!");
+        alert("Sesi berhasil di-reset!");
     }
 }
 
@@ -279,6 +224,11 @@ function renderKatalogPembeli() {
 
     const items = menuData.filter(m => filter === "all" || String(m.kantinId) === filter);
 
+    if (items.length === 0) {
+        grid.innerHTML = `<p class="text-muted">Belum ada menu tersedia di katalog kantin.</p>`;
+        return;
+    }
+
     items.forEach(item => {
         const habis = item.stok <= 0;
         const card = document.createElement('div');
@@ -351,10 +301,10 @@ async function konfirmasiKirimPesanan() {
     const varian = document.getElementById('select-varian-item').value;
     const qty = parseInt(document.getElementById('input-jumlah-porsi').value, 10);
     const totalHarga = parseInt(document.getElementById('modal-harga-menu').dataset.currentTotal, 10) || (itemDipilih.harga * qty);
-    const stokBaru = itemDipilih.stok - qty;
+    const stokBaru = Math.max(0, itemDipilih.stok - qty);
 
     const orderBaru = {
-        id: String(Date.now()),
+        id: String(Date.now() + Math.random()),
         kantin_id: parseInt(itemDipilih.kantinId, 10),
         nama_pemesan: currentUser.nama,
         info_pemesan: currentUser.kelas,
@@ -371,20 +321,21 @@ async function konfirmasiKirimPesanan() {
         chats: []
     };
 
-    // Kirim pesanan ke database Supabase
+    // 1. Kirim pesanan ke database Supabase
     const { error: errOrder } = await _supabase.from('orders_kantin').insert([orderBaru]);
     if (errOrder) {
         alert("Gagal mengirim pesanan: " + errOrder.message);
         return;
     }
 
-    // Kurangi stok di Supabase
+    // 2. Kurangi stok di tabel menu_kantin Supabase
     await _supabase.from('menu_kantin').update({ stok: stokBaru }).eq('id', itemDipilih.id);
 
     tutupModalPesan();
     menuData = await loadMenu();
     orderData = await loadOrders();
     renderKatalogPembeli();
+    renderPesananPembeli();
     alert(`Pesanan Take Away berhasil dikirim ke ${itemDipilih.namaKantin}!`);
 }
 
@@ -555,7 +506,7 @@ function renderMenuKantin() {
     const myMenu = menuData.filter(m => parseInt(m.kantinId, 10) === targetKantinId);
 
     if (myMenu.length === 0) {
-        grid.innerHTML = `<p class="text-muted">Belum ada menu di kantin Anda.</p>`;
+        grid.innerHTML = `<p class="text-muted">Belum ada menu di kantin Anda. Silakan klik "Tambah Menu Baru" di atas.</p>`;
         return;
     }
 
