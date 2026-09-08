@@ -321,14 +321,12 @@ async function konfirmasiKirimPesanan() {
         chats: []
     };
 
-    // 1. Kirim pesanan ke database Supabase
     const { error: errOrder } = await _supabase.from('orders_kantin').insert([orderBaru]);
     if (errOrder) {
         alert("Gagal mengirim pesanan: " + errOrder.message);
         return;
     }
 
-    // 2. Kurangi stok di tabel menu_kantin Supabase
     await _supabase.from('menu_kantin').update({ stok: stokBaru }).eq('id', itemDipilih.id);
 
     tutupModalPesan();
@@ -583,6 +581,13 @@ function bukaModalTambahMenu() {
     document.getElementById('new-menu-harga').value = "";
     document.getElementById('new-menu-stok').value = "";
     document.getElementById('new-menu-desc').value = "";
+    const fotoInput = document.getElementById('new-menu-foto');
+    if (fotoInput) fotoInput.value = "";
+    
+    // Reset pilihan input foto ke file upload secara default jika ada elemen teks link
+    const linkInput = document.getElementById('new-menu-foto-link');
+    if (linkInput) linkInput.value = "";
+
     document.getElementById('modal-tambah-menu').classList.remove('hidden');
 }
 
@@ -598,26 +603,55 @@ async function simpanMenuBaru(e) {
     const harga = parseInt(document.getElementById('new-menu-harga').value, 10) || 0;
     const stok = parseInt(document.getElementById('new-menu-stok').value, 10) || 0;
     const desc = document.getElementById('new-menu-desc').value.trim();
+    
+    const fotoFile = document.getElementById('new-menu-foto')?.files[0];
+    const fotoLink = document.getElementById('new-menu-foto-link')?.value.trim();
 
     const arrVarian = varianStr.split(',').map(v => v.trim()).filter(v => v !== "");
-    const newItem = {
-        id: Date.now(),
-        kantin_id: parseInt(currentUser.kantinId, 10),
-        nama_kantin: currentUser.nama,
-        nama: nama,
-        kategori: kategori,
-        description: desc,
-        harga: harga,
-        stok: stok,
-        foto: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=400",
-        varian_list: arrVarian.length > 0 ? arrVarian : ["Original"]
-    };
+    const defaultFoto = "https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=400";
 
-    await _supabase.from('menu_kantin').insert([newItem]);
-    tutupModalTambahMenu();
-    menuData = await loadMenu();
-    renderMenuKantin();
-    alert(`Menu baru "${nama}" berhasil disimpan!`);
+    async function proceedSave(fotoUrl) {
+        const newItem = {
+            id: Date.now(),
+            kantin_id: parseInt(currentUser.kantinId, 10),
+            nama_kantin: currentUser.nama,
+            nama: nama,
+            kategori: kategori,
+            description: desc,
+            harga: harga,
+            stok: stok,
+            foto: fotoUrl,
+            varian_list: arrVarian.length > 0 ? arrVarian : ["Original"]
+        };
+
+        const { error } = await _supabase.from('menu_kantin').insert([newItem]);
+        if (error) {
+            alert("Gagal menyimpan menu: " + error.message);
+            return;
+        }
+
+        tutupModalTambahMenu();
+        menuData = await loadMenu();
+        renderMenuKantin();
+        alert(`Menu baru "${nama}" berhasil disimpan!`);
+    }
+
+    // Prioritas 1: Jika penjual mengunggah file gambar
+    if (fotoFile) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            proceedSave(evt.target.result);
+        };
+        reader.readAsDataURL(fotoFile);
+    } 
+    // Prioritas 2: Jika penjual memasukkan URL/Link gambar
+    else if (fotoLink) {
+        proceedSave(fotoLink);
+    } 
+    // Default jika tidak keduanya
+    else {
+        proceedSave(defaultFoto);
+    }
 }
 
 function getNamaKantinById(id) {
