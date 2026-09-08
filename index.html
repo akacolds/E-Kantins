@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Kantin Sekolah - Sistem Pemesanan Take Away</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -69,7 +70,7 @@
             </form>
 
             <div class="reset-wrapper">
-                <button type="button" class="btn-reset" onclick="muatUlangDataDummy()">Muat Ulang Data Dummy (Reset Uji Coba)</button>
+                <button type="button" class="btn-reset" onclick="muatUlangDataDummy()">Reset Sesi Akun</button>
             </div>
         </section>
 
@@ -208,6 +209,9 @@
 
                 <label for="new-menu-foto">Foto / Gambar (Upload File):</label>
                 <input type="file" id="new-menu-foto" accept="image/*">
+
+                <label for="new-menu-foto-link" style="margin-top: 8px;">Atau Masukkan Link Gambar (URL):</label>
+                <input type="text" id="new-menu-foto-link" placeholder="Contoh: https://images.unsplash.com/photo-...">
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="tutupModalTambahMenu()">Batal</button>
