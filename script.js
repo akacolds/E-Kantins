@@ -304,7 +304,7 @@ async function konfirmasiKirimPesanan() {
     const stokBaru = Math.max(0, itemDipilih.stok - qty);
 
     const orderBaru = {
-        id: Date.now(), // Menggunakan angka bulat murni agar cocok dengan kolom tipe bigint
+        id: Math.floor(Date.now() / 10), // Menggunakan angka bulat murni untuk kolom bigint
         kantin_id: parseInt(itemDipilih.kantinId, 10),
         nama_pemesan: currentUser.nama,
         info_pemesan: currentUser.kelas,
@@ -375,8 +375,8 @@ async function renderPesananPembeli() {
                 <div class="chat-toggle-title">💬 Chat dengan Penjual:</div>
                 <div class="chat-history" id="chat-box-murid-${o.id}">${chatHTML}</div>
                 <div class="chat-form">
-                    <input type="text" id="input-chat-murid-${o.id}" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter') kirimPesanMurid('${o.id}')">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanMurid('${o.id}')">Kirim</button>
+                    <input type="text" id="input-chat-murid-${o.id}" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter') kirimPesanMurid(${o.id})">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanMurid(${o.id})">Kirim</button>
                 </div>
             </div>
         `;
@@ -388,7 +388,7 @@ async function kirimPesanMurid(orderId) {
     const input = document.getElementById(`input-chat-murid-${orderId}`);
     if (!input || !input.value.trim()) return;
 
-    const order = orderData.find(o => String(o.id) === String(orderId));
+    const order = orderData.find(o => Number(o.id) === Number(orderId));
     if (!order) return;
 
     if (!order.chats) order.chats = [];
