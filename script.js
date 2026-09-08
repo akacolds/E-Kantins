@@ -304,7 +304,7 @@ async function konfirmasiKirimPesanan() {
     const stokBaru = Math.max(0, itemDipilih.stok - qty);
 
     const orderBaru = {
-        id: String(Date.now() + Math.random()),
+        id: Date.now(), // Menggunakan angka bulat murni agar cocok dengan kolom tipe bigint
         kantin_id: parseInt(itemDipilih.kantinId, 10),
         nama_pemesan: currentUser.nama,
         info_pemesan: currentUser.kelas,
@@ -394,7 +394,7 @@ async function kirimPesanMurid(orderId) {
     if (!order.chats) order.chats = [];
     order.chats.push({ sender: "murid", text: input.value.trim(), waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) });
 
-    await _supabase.from('orders_kantin').update({ chats: order.chats }).eq('id', String(orderId));
+    await _supabase.from('orders_kantin').update({ chats: order.chats }).eq('id', orderId);
     input.value = "";
     orderData = await loadOrders();
     renderPesananPembeli();
@@ -456,8 +456,8 @@ async function renderPesananKantin() {
                 <div>
                     <span class="badge-status ${badgeClass}">${o.status}</span>
                     <div class="status-actions">
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="ubahStatusPesanan('${o.id}', 'Sedang Dimasak')">🍳 Dimasak</button>
-                        <button type="button" class="btn btn-sm btn-success" onclick="ubahStatusPesanan('${o.id}', 'Siap Diambil')">🔔 Siap</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="ubahStatusPesanan(${o.id}, 'Sedang Dimasak')">🍳 Dimasak</button>
+                        <button type="button" class="btn btn-sm btn-success" onclick="ubahStatusPesanan(${o.id}, 'Siap Diambil')">🔔 Siap</button>
                     </div>
                 </div>
             </div>
@@ -465,8 +465,8 @@ async function renderPesananKantin() {
                 <div class="chat-toggle-title">💬 Balas Chat Murid:</div>
                 <div class="chat-history" id="chat-box-kantin-${o.id}">${chatHTML}</div>
                 <div class="chat-form">
-                    <input type="text" id="input-chat-kantin-${o.id}" placeholder="Ketik balasan..." onkeydown="if(event.key==='Enter') kirimPesanKantin('${o.id}')">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanKantin('${o.id}')">Kirim</button>
+                    <input type="text" id="input-chat-kantin-${o.id}" placeholder="Ketik balasan..." onkeydown="if(event.key==='Enter') kirimPesanKantin(${o.id})">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanKantin(${o.id})">Kirim</button>
                 </div>
             </div>
         `;
@@ -475,7 +475,7 @@ async function renderPesananKantin() {
 }
 
 async function ubahStatusPesanan(orderId, statusBaru) {
-    await _supabase.from('orders_kantin').update({ status: statusBaru }).eq('id', String(orderId));
+    await _supabase.from('orders_kantin').update({ status: statusBaru }).eq('id', orderId);
     orderData = await loadOrders();
     renderPesananKantin();
 }
@@ -484,13 +484,13 @@ async function kirimPesanKantin(orderId) {
     const input = document.getElementById(`input-chat-kantin-${orderId}`);
     if (!input || !input.value.trim()) return;
 
-    const order = orderData.find(o => String(o.id) === String(orderId));
+    const order = orderData.find(o => Number(o.id) === Number(orderId));
     if (!order) return;
 
     if (!order.chats) order.chats = [];
     order.chats.push({ sender: "kantin", text: input.value.trim(), waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) });
 
-    await _supabase.from('orders_kantin').update({ chats: order.chats }).eq('id', String(orderId));
+    await _supabase.from('orders_kantin').update({ chats: order.chats }).eq('id', orderId);
     input.value = "";
     orderData = await loadOrders();
     renderPesananKantin();
@@ -584,7 +584,6 @@ function bukaModalTambahMenu() {
     const fotoInput = document.getElementById('new-menu-foto');
     if (fotoInput) fotoInput.value = "";
     
-    // Reset pilihan input foto ke file upload secara default jika ada elemen teks link
     const linkInput = document.getElementById('new-menu-foto-link');
     if (linkInput) linkInput.value = "";
 
@@ -636,20 +635,15 @@ async function simpanMenuBaru(e) {
         alert(`Menu baru "${nama}" berhasil disimpan!`);
     }
 
-    // Prioritas 1: Jika penjual mengunggah file gambar
     if (fotoFile) {
         const reader = new FileReader();
         reader.onload = function(evt) {
             proceedSave(evt.target.result);
         };
         reader.readAsDataURL(fotoFile);
-    } 
-    // Prioritas 2: Jika penjual memasukkan URL/Link gambar
-    else if (fotoLink) {
+    } else if (fotoLink) {
         proceedSave(fotoLink);
-    } 
-    // Default jika tidak keduanya
-    else {
+    } else {
         proceedSave(defaultFoto);
     }
 }
