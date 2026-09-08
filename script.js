@@ -304,7 +304,6 @@ async function konfirmasiKirimPesanan() {
     const stokBaru = Math.max(0, itemDipilih.stok - qty);
 
     const orderBaru = {
-        id: Math.floor(Date.now() / 10), // Menggunakan angka bulat murni untuk kolom bigint
         kantin_id: parseInt(itemDipilih.kantinId, 10),
         nama_pemesan: currentUser.nama,
         info_pemesan: currentUser.kelas,
