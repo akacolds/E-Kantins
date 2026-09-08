@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Kantin Sekolah - Sistem Pemesanan Take Away</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="header-inner">
+            <div>
+                <h1>E-Kantin Sekolah (Take Away)</h1>
+                <p id="sub-header-title">Pemesanan Makanan Kantin 1 - 6 • Khusus Ambil Sendiri di Kantin</p>
+            </div>
+            <div id="user-session-bar" class="user-bar hidden">
+                <span id="session-user-text"></span>
+                <button type="button" class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- ================= VIEW 1: LOGIN SISWA & PENJUAL ================= -->
+        <section id="view-login" class="card login-box">
+            <h2>Masuk ke E-Kantin</h2>
+            <p class="login-subtext">Pilih akses masuk sebagai siswa atau pengelola kantin.</p>
+
+            <div class="login-tabs">
+                <button type="button" id="tab-btn-murid" class="tab-btn active" onclick="gantiTabLogin('murid')">Siswa / Murid</button>
+                <button type="button" id="tab-btn-kantin" class="tab-btn" onclick="gantiTabLogin('kantin')">Penjual Kantin</button>
+            </div>
+
+            <!-- Form Login Murid -->
+            <form id="form-login-murid" onsubmit="loginMurid(event)">
+                <label for="input-nama-murid">Nama Siswa:</label>
+                <input type="text" id="input-nama-murid" placeholder="Contoh: Renold" required>
+                
+                <label for="input-kelas-murid">Kelas:</label>
+                <input type="text" id="input-kelas-murid" placeholder="Contoh: 10 RPL C" required>
+
+                <label for="input-kode-murid">Kode Unik Siswa (Bebas bikin sendiri):</label>
+                <input type="password" id="input-kode-murid" placeholder="Contoh: 1234 atau RNL7" required>
+                <small class="hint-text">*Tentukan kode unikmu sendiri (angka/huruf). Ingat kode ini untuk login selanjutnya agar akun & pesananmu tidak tertukar dengan teman lain!</small>
+                
+                <button type="submit" class="btn btn-primary full-width">Masuk Sebagai Murid</button>
+            </form>
+
+            <!-- Form Login Penjual Kantin -->
+            <form id="form-login-kantin" class="hidden" onsubmit="loginKantin(event)">
+                <label for="select-kantin-login">Pilih Kantin Anda:</label>
+                <select id="select-kantin-login" required>
+                    <option value="1">Kantin 1 (Bu Siti)</option>
+                    <option value="2">Kantin 2 (Pak Joko)</option>
+                    <option value="3">Kantin 3 (Mbak Rini)</option>
+                    <option value="4">Kantin 4 (Barokah)</option>
+                    <option value="5">Kantin 5 (Mas Budi)</option>
+                    <option value="6">Kantin 6 (Berkah)</option>
+                </select>
+
+                <label for="input-pass-kantin">Password:</label>
+                <input type="password" id="input-pass-kantin" placeholder="Default: kantin123" required>
+                <small class="text-muted">Password default semua akun: <strong>kantin123</strong></small>
+
+                <button type="submit" class="btn btn-primary full-width">Masuk ke Dashboard Penjual</button>
+            </form>
+
+            <div class="reset-wrapper">
+                <button type="button" class="btn-reset" onclick="muatUlangDataDummy()">Muat Ulang Data Dummy (Reset Uji Coba)</button>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: DASHBOARD MURID ================= -->
+        <section id="view-pembeli" class="hidden">
+            <div class="nav-tabs">
+                <button type="button" class="sub-tab active" id="btn-tab-pembeli-menu" onclick="switchPembeliView('menu')">Katalog Menu Kantin</button>
+                <button type="button" class="sub-tab" id="btn-tab-pembeli-pesanan" onclick="switchPembeliView('pesanan')">
+                    Pesanan Saya <span id="badge-pembeli-count" class="badge-count hidden">0</span>
+                </button>
+            </div>
+
+            <div id="pembeli-view-menu">
+                <div class="filter-wrapper">
+                    <label>Pilih Kantin: </label>
+                    <select id="filter-kantin" onchange="renderKatalogPembeli()">
+                        <option value="all">Semua Kantin (1 s/d 6)</option>
+                        <option value="1">Kantin 1 (Bu Siti)</option>
+                        <option value="2">Kantin 2 (Pak Joko)</option>
+                        <option value="3">Kantin 3 (Mbak Rini)</option>
+                        <option value="4">Kantin 4 (Barokah)</option>
+                        <option value="5">Kantin 5 (Mas Budi)</option>
+                        <option value="6">Kantin 6 (Berkah)</option>
+                    </select>
+                </div>
+                <div id="grid-menu-pembeli" class="menu-grid"></div>
+            </div>
+
+            <div id="pembeli-view-pesanan" class="hidden">
+                <div class="takeaway-banner">
+                    📦 <strong>Sistem Take Away:</strong> Saat pesanan berstatus <em>"Siap Diambil"</em>, silakan langsung ambil makananmu di stand kantin yang bersangkutan!
+                </div>
+                <div id="list-pesanan-pembeli" class="order-list"></div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: DASHBOARD PENJUAL KANTIN ================= -->
+        <section id="view-kantin" class="hidden">
+            <div class="nav-tabs">
+                <button type="button" class="sub-tab active" id="btn-tab-kantin-pesanan" onclick="switchKantinView('pesanan')">
+                    📥 Pesanan Masuk <span id="badge-pesanan-kantin" class="badge-count hidden">0</span>
+                </button>
+                <button type="button" class="sub-tab" id="btn-tab-kantin-menu" onclick="switchKantinView('menu')">
+                    📦 Kelola Menu & Stok
+                </button>
+            </div>
+
+            <div id="kantin-view-pesanan">
+                <div class="info-nav-box">
+                    💡 <em>Ingin menambah menu atau mengubah stok? Klik tab <strong>"Kelola Menu & Stok"</strong> di atas!</em>
+                </div>
+                <div class="order-header-box">
+                    <h3 id="label-kantin-pesanan">Pesanan Masuk (Take Away)</h3>
+                    <div class="filter-pesanan">
+                        <label>Filter Status: </label>
+                        <select id="filter-status-pesanan" onchange="renderPesananKantin()">
+                            <option value="all">Semua Status</option>
+                            <option value="Menunggu">Menunggu</option>
+                            <option value="Sedang Dimasak">Sedang Dimasak</option>
+                            <option value="Siap Diambil">Siap Diambil</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="list-pesanan-masuk" class="order-list"></div>
+            </div>
+
+            <div id="kantin-view-menu" class="hidden">
+                <div class="menu-mgmt-header">
+                    <div>
+                        <h3 id="label-kantin-menu">Daftar Menu Jualan Anda</h3>
+                        <p class="text-muted">Atur harga, tambah/kurang stok, ubah varian, foto, atau tambahkan menu baru.</p>
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="bukaModalTambahMenu()">➕ Tambah Menu Baru</button>
+                </div>
+                <div id="grid-menu-kantin" class="menu-grid"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= MODAL PESAN MURID (PILIH VARIAN & PORSI) ================= -->
+    <div id="modal-pesan" class="modal-backdrop hidden">
+        <div class="modal-box">
+            <h3 id="modal-nama-menu">Pesan Menu</h3>
+            <p id="modal-harga-menu" class="text-success font-bold"></p>
+            <p id="modal-kantin-menu" class="text-muted text-sm"></p>
+
+            <div class="options-box">
+                <label for="select-varian-item">Pilih Varian:</label>
+                <select id="select-varian-item"></select>
+
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 15px;">
+                    <label for="input-jumlah-porsi" style="margin: 0; white-space: nowrap;">Jumlah Porsi:</label>
+                    <input type="number" id="input-jumlah-porsi" value="1" min="1" onchange="updateTotalHargaPesan()" style="width: 80px;">
+                </div>
+            </div>
+
+            <label for="input-catatan-pesan">Catatan Tambahan (Opsi telur, jam ambil, pedas, dll):</label>
+            <textarea id="input-catatan-pesan" placeholder="Contoh: Telurnya dadar matang, jangan terlalu pedas ya Bu..."></textarea>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="tutupModalPesan()">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="konfirmasiKirimPesanan()">Kirim Pesanan (Take Away)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL PENJUAL: TAMBAH MENU ================= -->
+    <div id="modal-tambah-menu" class="modal-backdrop hidden">
+        <div class="modal-box">
+            <h3>Tambah Menu Jualan Baru</h3>
+            <form onsubmit="simpanMenuBaru(event)">
+                <label for="new-menu-nama">Nama Menu Dasar:</label>
+                <input type="text" id="new-menu-nama" placeholder="Contoh: Aneka Mie" required>
+
+                <label for="new-menu-kategori">Kategori:</label>
+                <select id="new-menu-kategori" required>
+                    <option value="Mie">Mie</option>
+                    <option value="Minuman">Minuman</option>
+                    <option value="Snack">Snack</option>
+                    <option value="Nasi">Nasi</option>
+                </select>
+
+                <label for="new-menu-varian">Daftar Varian (Pisahkan dengan koma):</label>
+                <input type="text" id="new-menu-varian" placeholder="Contoh: Aceh, Geprek, Rendang" required>
+                <small class="hint-text" style="margin-bottom: 8px;">*Semua varian di atas akan memiliki harga dasar yang sama.</small>
+
+                <label for="new-menu-harga">Harga Dasar Per Porsi (Rp):</label>
+                <input type="number" id="new-menu-harga" placeholder="Contoh: 7000" required>
+
+                <label for="new-menu-stok">Jumlah Stok Awal:</label>
+                <input type="number" id="new-menu-stok" placeholder="Contoh: 20" required>
+
+                <label for="new-menu-desc">Deskripsi Singkat:</label>
+                <input type="text" id="new-menu-desc" placeholder="Contoh: Aneka pilihan mie mantap" required>
+
+                <label for="new-menu-foto">Foto / Gambar (Upload File):</label>
+                <input type="file" id="new-menu-foto" accept="image/*">
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="tutupModalTambahMenu()">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan Menu Baru</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Proyek Kelompok RPL - Web Pemesanan Kantin Sekolah</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
