@@ -116,7 +116,7 @@ function gantiTabLogin(tab) {
     document.getElementById('form-login-kantin').classList.toggle('hidden', tab !== 'kantin');
 }
 
-function loginMurid(e) {
+async function loginMurid(e) {
     e.preventDefault();
     const nama = document.getElementById('input-nama-murid').value.trim();
     const kelas = document.getElementById('input-kelas-murid').value.trim();
@@ -132,7 +132,7 @@ function loginMurid(e) {
 
     if (registered[userKey]) {
         if (registered[userKey] !== kodeUnik) {
-            alert(`Kode unik salah untuk siswa "${nama}" (${kelas})!`);
+            alert(`Gagal Masuk! Nama "${nama}" dari kelas "${kelas}" sudah terdaftar dengan Kode Unik yang berbeda.`);
             return;
         }
     } else {
@@ -145,22 +145,29 @@ function loginMurid(e) {
     cekSesi();
 }
 
-function loginKantin(e) {
+async function loginKantin(e) {
     e.preventDefault();
     const kId = parseInt(document.getElementById('select-kantin-login').value, 10);
-    const pass = document.getElementById('input-pass-kantin').value;
+    const passInput = document.getElementById('input-pass-kantin').value;
 
-    if (pass !== "kantin123") {
-        alert("Password salah! (Default: kantin123)");
+    // Ambil password dari database Supabase (tabel kantin_users)
+    const { data, error } = await _supabase
+        .from('kantin_users')
+        .select('*')
+        .eq('kantin_id', kId)
+        .single();
+
+    if (error || !data) {
+        alert("Gagal memverifikasi akun kantin dari database. Pastikan tabel kantin_users sudah dibuat di Supabase.");
         return;
     }
 
-    const mapNama = {
-        1: "Kantin 1 (Bu Siti)", 2: "Kantin 2 (Pak Joko)", 3: "Kantin 3 (Mbak Rini)",
-        4: "Kantin 4 (Barokah)", 5: "Kantin 5 (Mas Budi)", 6: "Kantin 6 (Berkah)"
-    };
+    if (passInput !== data.password) {
+        alert("Password salah untuk kantin tersebut!");
+        return;
+    }
 
-    currentUser = { role: "kantin", kantinId: kId, nama: mapNama[kId] };
+    currentUser = { role: "kantin", kantinId: data.kantin_id, nama: data.nama_kantin };
     saveToStorage();
     cekSesi();
 }
@@ -304,7 +311,7 @@ async function konfirmasiKirimPesanan() {
     const stokBaru = Math.max(0, itemDipilih.stok - qty);
 
     const orderBaru = {
-        id: Date.now(), // Mengisi kembali ID dengan angka unik berbasis waktu (aman untuk bigint)
+        id: Date.now(),
         kantin_id: parseInt(itemDipilih.kantinId, 10),
         nama_pemesan: currentUser.nama,
         info_pemesan: currentUser.kelas,
