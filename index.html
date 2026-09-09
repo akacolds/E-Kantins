@@ -5,117 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Kantin Sekolah</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <!-- USER SESSION BAR -->
-    <div id="user-session-bar" class="session-bar hidden">
-        <span id="session-user-text"></span>
-        <button type="button" class="btn btn-danger btn-sm" onclick="logout()">Logout / Keluar</button>
-    </div>
+    <!-- HEADER -->
+    <header>
+        <div class="header-inner">
+            <div>
+                <h1>E-Kantin Sekolah</h1>
+                <div id="sub-header-title">Pesan Makanan & Minuman Tanpa Antri</div>
+            </div>
+            
+            <!-- USER SESSION BAR -->
+            <div id="user-session-bar" class="user-bar hidden">
+                <span id="session-user-text"></span>
+                <button type="button" class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
 
     <!-- VIEW 1: LOGIN -->
     <div id="view-login" class="container">
-        <h2>Selamat Datang di E-Kantin</h2>
-        <div class="tab-nav">
-            <button type="button" id="tab-btn-murid" class="btn-tab active" onclick="gantiTabLogin('murid')">🎓 Login Siswa</button>
-            <button type="button" id="tab-btn-kantin" class="btn-tab" onclick="gantiTabLogin('kantin')">🍔 Login Kantin</button>
+        <div class="card login-box">
+            <h2>Selamat Datang</h2>
+            <p class="login-subtext">Silakan pilih peran kamu untuk masuk ke sistem.</p>
+            
+            <div class="login-tabs">
+                <button type="button" id="tab-btn-murid" class="tab-btn active" onclick="gantiTabLogin('murid')">🎓 Siswa</button>
+                <button type="button" id="tab-btn-kantin" class="tab-btn" onclick="gantiTabLogin('kantin')">🍔 Kantin</button>
+            </div>
+
+            <!-- FORM LOGIN MURID -->
+            <form id="form-login-murid" onsubmit="loginMurid(event)">
+                <div class="form-group">
+                    <label>Nama Lengkap Siswa:</label>
+                    <input type="text" id="input-nama-murid" placeholder="Contoh: Budi Santoso" required>
+                </div>
+                <div class="form-group">
+                    <label>Kelas:</label>
+                    <input type="text" id="input-kelas-murid" placeholder="Contoh: X RPL 1" required>
+                </div>
+                <div class="form-group">
+                    <label>Kode Unik Siswa:</label>
+                    <input type="text" id="input-kode-murid" placeholder="Contoh: 1234" required>
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Masuk Sebagai Siswa</button>
+            </form>
+
+            <!-- FORM LOGIN KANTIN -->
+            <form id="form-login-kantin" class="hidden" onsubmit="loginKantin(event)">
+                <div class="form-group">
+                    <label>Pilih Kantin:</label>
+                    <select id="select-kantin-login">
+                        <option value="1">Kantin 1</option>
+                        <option value="2">Kantin 2</option>
+                        <option value="3">Kantin 3</option>
+                        <option value="4">Kantin 4</option>
+                        <option value="5">Kantin 5</option>
+                        <option value="6">Kantin 6</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Password Kantin:</label>
+                    <input type="password" id="input-pass-kantin" placeholder="Masukkan Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Masuk Sebagai Kantin</button>
+            </form>
         </div>
-
-        <!-- FORM LOGIN MURID -->
-        <form id="form-login-murid" onsubmit="loginMurid(event)">
-            <div class="form-group">
-                <label>Nama Lengkap Siswa:</label>
-                <input type="text" id="input-nama-murid" placeholder="Contoh: Budi Santoso" required>
-            </div>
-            <div class="form-group">
-                <label>Kelas:</label>
-                <input type="text" id="input-kelas-murid" placeholder="Contoh: X RPL 1" required>
-            </div>
-            <div class="form-group">
-                <label>Kode Unik Siswa:</label>
-                <input type="text" id="input-kode-murid" placeholder="Contoh: 1234" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Masuk Sebagai Siswa</button>
-        </form>
-
-        <!-- FORM LOGIN KANTIN -->
-        <form id="form-login-kantin" class="hidden" onsubmit="loginKantin(event)">
-            <div class="form-group">
-                <label>Pilih Kantin:</label>
-                <select id="select-kantin-login">
-                    <option value="1">Kantin 1</option>
-                    <option value="2">Kantin 2</option>
-                    <option value="3">Kantin 3</option>
-                    <option value="4">Kantin 4</option>
-                    <option value="5">Kantin 5</option>
-                    <option value="6">Kantin 6</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Password Kantin:</label>
-                <input type="password" id="input-pass-kantin" placeholder="Masukkan Password" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Masuk Sebagai Kantin</button>
-        </form>
     </div>
 
     <!-- VIEW 2: DASHBOARD MURID -->
     <div id="view-pembeli" class="container hidden">
-        <div class="tab-nav">
-            <button type="button" id="btn-tab-pembeli-menu" class="btn-tab active" onclick="switchPembeliView('menu')">🍱 Katalog Menu</button>
-            <button type="button" id="btn-tab-pembeli-pesanan" class="btn-tab" onclick="switchPembeliView('pesanan')">🛒 Pesanan Saya</button>
+        <div class="nav-tabs">
+            <button type="button" id="btn-tab-pembeli-menu" class="sub-tab active" onclick="switchPembeliView('menu')">🍱 Katalog Menu</button>
+            <button type="button" id="btn-tab-pembeli-pesanan" class="sub-tab" onclick="switchPembeliView('pesanan')">🛒 Pesanan Saya</button>
         </div>
 
         <!-- TAB KATALOG -->
         <div id="pembeli-view-menu">
-            <div class="filter-bar">
-                <label>Filter Kantin: </label>
-                <select id="filter-kantin" onchange="renderKatalogPembeli()">
-                    <option value="all">Semua Kantin</option>
-                    <option value="1">Kantin 1</option>
-                    <option value="2">Kantin 2</option>
-                    <option value="3">Kantin 3</option>
-                    <option value="4">Kantin 4</option>
-                    <option value="5">Kantin 5</option>
-                    <option value="6">Kantin 6</option>
-                </select>
+            <div class="filter-wrapper">
+                <div class="takeaway-banner">
+                    🚀 <strong>Sistem Take Away:</strong> Pesan via aplikasi, ambil saat makanan sudah siap!
+                </div>
+                <div class="filter-pesanan">
+                    <label>Filter Kantin: </label>
+                    <select id="filter-kantin" onchange="renderKatalogPembeli()">
+                        <option value="all">Semua Kantin</option>
+                        <option value="1">Kantin 1</option>
+                        <option value="2">Kantin 2</option>
+                        <option value="3">Kantin 3</option>
+                        <option value="4">Kantin 4</option>
+                        <option value="5">Kantin 5</option>
+                        <option value="6">Kantin 6</option>
+                    </select>
+                </div>
             </div>
             <div id="grid-menu-pembeli" class="menu-grid"></div>
         </div>
 
         <!-- TAB PESANAN SAYA -->
         <div id="pembeli-view-pesanan" class="hidden">
-            <h3>Riwayat Pesanan Anda</h3>
-            <div id="list-pesanan-pembeli" class="orders-list"></div>
+            <div class="card">
+                <h3>Riwayat Pesanan Anda</h3>
+                <div id="list-pesanan-pembeli" class="order-list" style="margin-top: 15px;"></div>
+            </div>
         </div>
     </div>
 
     <!-- VIEW 3: DASHBOARD KANTIN -->
     <div id="view-kantin" class="container hidden">
-        <div class="tab-nav">
-            <button type="button" id="btn-tab-kantin-pesanan" class="btn-tab active" onclick="switchKantinView('pesanan')">
+        <div class="nav-tabs">
+            <button type="button" id="btn-tab-kantin-pesanan" class="sub-tab active" onclick="switchKantinView('pesanan')">
                 📋 Pesanan Masuk <span id="badge-pesanan-kantin" class="badge-count hidden">0</span>
             </button>
-            <button type="button" id="btn-tab-kantin-menu" class="btn-tab" onclick="switchKantinView('menu')">
+            <button type="button" id="btn-tab-kantin-menu" class="sub-tab" onclick="switchKantinView('menu')">
                 🍔 Kelola Menu
             </button>
-            <button type="button" id="btn-tab-kantin-selesai" class="btn-tab" onclick="switchKantinView('selesai')">
+            <button type="button" id="btn-tab-kantin-selesai" class="sub-tab" onclick="switchKantinView('selesai')">
                 ✅ Pesanan Selesai
             </button>
         </div>
 
         <!-- VIEW PESANAN MASUK -->
-        <div id="kantin-view-pesanan">
+        <div id="kantin-view-pesanan" class="card">
             <h3 id="label-kantin-pesanan">Pesanan Masuk</h3>
-            <div id="list-pesanan-masuk" class="orders-list"></div>
+            <div id="list-pesanan-masuk" class="order-list" style="margin-top: 15px;"></div>
         </div>
 
         <!-- VIEW KELOLA MENU -->
         <div id="kantin-view-menu" class="hidden">
-            <div class="header-action">
+            <div class="menu-mgmt-header">
                 <h3 id="label-kantin-menu">Kelola Menu & Stok</h3>
                 <button type="button" class="btn btn-success" onclick="bukaModalTambahMenu()">+ Tambah Menu Baru</button>
             </div>
@@ -123,36 +143,38 @@
         </div>
 
         <!-- VIEW PESANAN SELESAI -->
-        <div id="kantin-view-selesai" class="hidden">
+        <div id="kantin-view-selesai" class="card hidden">
             <h3>✅ Riwayat Pesanan Selesai</h3>
-            <div id="list-pesanan-selesai" class="orders-list"></div>
+            <div id="list-pesanan-selesai" class="order-list" style="margin-top: 15px;"></div>
         </div>
     </div>
 
     <!-- MODAL ORDER (PEMBELI) -->
-    <div id="modal-pesan" class="modal hidden">
-        <div class="modal-content">
+    <div id="modal-pesan" class="modal-backdrop hidden">
+        <div class="modal-box">
             <h3 id="modal-nama-menu">Pesan Menu</h3>
             <p id="modal-kantin-menu" class="text-muted"></p>
             
-            <div class="form-group">
-                <label>Pilih Varian:</label>
-                <select id="select-varian-item"></select>
+            <div class="options-box">
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Pilih Varian:</label>
+                    <select id="select-varian-item"></select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Jumlah Porsi:</label>
+                    <input type="number" id="input-jumlah-porsi" value="1" min="1" onchange="updateTotalHargaPesan()" oninput="updateTotalHargaPesan()">
+                </div>
+
+                <div class="form-group">
+                    <label>Catatan Pesanan:</label>
+                    <textarea id="input-catatan-pesan" placeholder="Contoh: Pedas, Tanpa Bawang..."></textarea>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Jumlah Porsi:</label>
-                <input type="number" id="input-jumlah-porsi" value="1" min="1" onchange="updateTotalHargaPesan()" oninput="updateTotalHargaPesan()">
-            </div>
+            <h4 id="modal-harga-menu" class="text-success" style="font-size:18px;">Total: Rp 0</h4>
 
-            <div class="form-group">
-                <label>Catatan Pesanan:</label>
-                <textarea id="input-catatan-pesan" placeholder="Contoh: Pedas, Tanpa Bawang..."></textarea>
-            </div>
-
-            <h4 id="modal-harga-menu">Total: Rp 0</h4>
-
-            <div class="modal-actions">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="tutupModalPesan()">Batal</button>
                 <button type="button" class="btn btn-primary" onclick="konfirmasiKirimPesanan()">Kirim Pesanan</button>
             </div>
@@ -160,10 +182,10 @@
     </div>
 
     <!-- MODAL TAMBAH MENU (KANTIN) -->
-    <div id="modal-tambah-menu" class="modal hidden">
-        <div class="modal-content">
+    <div id="modal-tambah-menu" class="modal-backdrop hidden">
+        <div class="modal-box">
             <h3>Tambah Menu Baru</h3>
-            <form onsubmit="simpanMenuBaru(event)">
+            <form onsubmit="simpanMenuBaru(event)" style="margin-top: 15px;">
                 <div class="form-group">
                     <label>Nama Makanan / Minuman:</label>
                     <input type="text" id="new-menu-nama" required>
@@ -196,7 +218,7 @@
                     <label>URL Gambar (Opsional):</label>
                     <input type="text" id="new-menu-foto-link" placeholder="https://...">
                 </div>
-                <div class="modal-actions">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="tutupModalTambahMenu()">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan Menu</button>
                 </div>
@@ -204,8 +226,12 @@
         </div>
     </div>
 
-    <!-- ELEMEN AUDIO NOTIFIKASI -->
+    <!-- AUDIO NOTIFIKASI -->
     <audio id="sound-notif" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" crossorigin="anonymous"></audio>
+
+    <footer>
+        E-Kantin Sekolah &copy; 2026 - All Rights Reserved
+    </footer>
 
     <script src="script.js"></script>
 </body>
