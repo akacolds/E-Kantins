@@ -18,7 +18,7 @@ function isSudahSelesaiSatuMenit(order) {
     return (Date.now() - waktuBuat) > (1 * 60 * 1000);
 }
 
-// Ambil Data Menu dari Supabase
+// Ambil Data Menu
 async function loadMenu() {
     const { data, error } = await _supabase.from('menu_kantin').select('*');
     if (error || !data) return [];
@@ -36,7 +36,7 @@ async function loadMenu() {
     }));
 }
 
-// Ambil Data Pesanan dari Supabase
+// Ambil Data Pesanan
 async function loadOrders() {
     const { data, error } = await _supabase.from('orders_kantin').select('*').order('id', { ascending: false });
     if (error || !data) return [];
@@ -76,7 +76,7 @@ function formatRupiah(num) {
     return "Rp " + (num || 0).toLocaleString('id-ID');
 }
 
-// ================= REALTIME SUBSCRIPTION (SUPABASE) =================
+// ================= REALTIME SUBSCRIPTION =================
 _supabase
   .channel('public:e-kantin-realtime')
   .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders_kantin' }, async (payload) => {
@@ -88,8 +88,7 @@ _supabase
 
           if ("Notification" in window && Notification.permission === "granted") {
               new Notification("🔔 Pesanan Baru Masuk!", {
-                  body: `${newOrder.nama_pemesan} memesan: ${newOrder.nama_menu} (${newOrder.qty} Porsi)`,
-                  icon: "https://cdn-icons-png.flaticon.com/512/3081/3081559.png"
+                  body: `${newOrder.nama_pemesan} memesan: ${newOrder.nama_menu} (${newOrder.qty} Porsi)`
               });
           }
       }
@@ -142,7 +141,7 @@ async function loginMurid(e) {
     const registered = JSON.parse(localStorage.getItem('kantin_registered_students')) || {};
 
     if (registered[userKey] && registered[userKey] !== kodeUnik) {
-        alert(`Gagal Masuk! Nama "${nama}" dari kelas "${kelas}" sudah terdaftar dengan Kode Unik berbeda.`);
+        alert(`Gagal Masuk! Kode Unik tidak cocok.`);
         return;
     }
 
@@ -370,6 +369,7 @@ async function renderPesananPembeli() {
                 <div><span class="badge-status ${badgeClass}">${o.status}</span></div>
             </div>
             <div class="chat-section">
+                <div class="chat-toggle-title">💬 Fitur Chat / Obrolan</div>
                 <div class="chat-history">${chatHTML}</div>
                 <div class="chat-form">
                     <input type="text" id="input-chat-murid-${o.id}" placeholder="Ketik pesan...">
@@ -419,7 +419,6 @@ async function renderPesananKantin() {
 
     const targetKantinId = parseInt(currentUser.kantinId, 10);
 
-    // Hanya tampilkan pesanan yang BELUM berstatus Siap Diambil > 1 menit
     const masuk = orderData.filter(o => 
         parseInt(o.kantinId, 10) === targetKantinId && 
         !isSudahSelesaiSatuMenit(o)
@@ -459,13 +458,14 @@ async function renderPesananKantin() {
                 </div>
                 <div>
                     <span class="badge-status ${badgeClass}">${o.status}</span>
-                    <div class="status-actions" style="margin-top: 8px;">
+                    <div class="status-actions">
                         <button type="button" class="btn btn-sm btn-secondary" onclick="ubahStatusPesanan(${o.id}, 'Sedang Dimasak')">🍳 Dimasak</button>
                         <button type="button" class="btn btn-sm btn-success" onclick="ubahStatusPesanan(${o.id}, 'Siap Diambil')">🔔 Siap</button>
                     </div>
                 </div>
             </div>
             <div class="chat-section">
+                <div class="chat-toggle-title">💬 Fitur Chat / Obrolan</div>
                 <div class="chat-history">${chatHTML}</div>
                 <div class="chat-form">
                     <input type="text" id="input-chat-kantin-${o.id}" placeholder="Balas chat...">
@@ -485,7 +485,6 @@ async function renderPesananSelesaiKantin() {
 
     const targetKantinId = parseInt(currentUser.kantinId, 10);
 
-    // Filter pesanan yang khusus berstatus 'Siap Diambil' dan usianya > 1 menit
     const selesai = orderData.filter(o => 
         parseInt(o.kantinId, 10) === targetKantinId && 
         isSudahSelesaiSatuMenit(o)
@@ -556,7 +555,6 @@ function renderMenuKantin() {
     myMenu.forEach(item => {
         const card = document.createElement('div');
         card.className = "menu-card";
-        let listStr = Array.isArray(item.varianList) ? item.varianList.join(", ") : (item.varianList || "Original");
 
         card.innerHTML = `
             <div class="img-box"><img src="${item.foto}" alt="${item.nama}"></div>
@@ -564,12 +562,14 @@ function renderMenuKantin() {
                 <span class="tag-kantin">[${item.kategori}]</span>
                 <h4 class="menu-title">${item.nama}</h4>
                 <p class="menu-desc">${item.desc}</p>
-                <p class="menu-price">Harga: ${formatRupiah(item.harga)}</p>
-                <div style="margin-top:10px;">
-                    <label style="font-size:12px;">Stok:</label>
-                    <input type="number" value="${item.stok}" style="width:70px; padding:4px;" onchange="setStokManual(${item.id}, this.value)">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="hapusMenu(${item.id})">Hapus</button>
+                <p class="menu-price">${formatRupiah(item.harga)}</p>
+            </div>
+            <div class="kantin-edit-panel">
+                <div class="stock-control-row">
+                    <label style="font-size:12px; font-weight:600;">Stok:</label>
+                    <input type="number" class="stock-input" value="${item.stok}" onchange="setStokManual(${item.id}, this.value)">
                 </div>
+                <button type="button" class="btn-delete-menu" onclick="hapusMenu(${item.id})">Hapus Menu</button>
             </div>
         `;
         grid.appendChild(card);
@@ -634,7 +634,6 @@ function getNamaKantinById(id) {
     return `Kantin ${id}`;
 }
 
-// Timer pengecekan otomatis setiap 10 detik
 setInterval(() => {
     if (currentUser && currentUser.role === 'kantin') {
         renderPesananKantin();
