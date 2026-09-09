@@ -10,103 +10,206 @@
 </head>
 <body>
 
-    <header>
-        <div class="header-inner">
-            <div>
-                <h1>E-Kantin Sekolah</h1>
-                <p id="sub-header-title">Pemesanan Makanan Kantin 1 - 6 • Khusus Ambil Sendiri di Kantin</p>
+    <!-- USER SESSION BAR -->
+    <div id="user-session-bar" class="session-bar hidden">
+        <span id="session-user-text"></span>
+        <button type="button" class="btn btn-danger btn-sm" onclick="logout()">Logout / Keluar</button>
+    </div>
+
+    <!-- VIEW 1: LOGIN -->
+    <div id="view-login" class="container">
+        <h2>Selamat Datang di E-Kantin</h2>
+        <div class="tab-nav">
+            <button type="button" id="tab-btn-murid" class="btn-tab active" onclick="gantiTabLogin('murid')">🎓 Login Siswa</button>
+            <button type="button" id="tab-btn-kantin" class="btn-tab" onclick="gantiTabLogin('kantin')">🍔 Login Kantin</button>
+        </div>
+
+        <!-- FORM LOGIN MURID -->
+        <form id="form-login-murid" onsubmit="loginMurid(event)">
+            <div class="form-group">
+                <label>Nama Lengkap Siswa:</label>
+                <input type="text" id="input-nama-murid" placeholder="Contoh: Budi Santoso" required>
             </div>
-            <div id="user-session-bar" class="user-bar hidden">
-                <span id="session-user-text"></span>
-                <button type="button" class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+            <div class="form-group">
+                <label>Kelas:</label>
+                <input type="text" id="input-kelas-murid" placeholder="Contoh: X RPL 1" required>
+            </div>
+            <div class="form-group">
+                <label>Kode Unik Siswa:</label>
+                <input type="text" id="input-kode-murid" placeholder="Contoh: 1234" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Masuk Sebagai Siswa</button>
+        </form>
+
+        <!-- FORM LOGIN KANTIN -->
+        <form id="form-login-kantin" class="hidden" onsubmit="loginKantin(event)">
+            <div class="form-group">
+                <label>Pilih Kantin:</label>
+                <select id="select-kantin-login">
+                    <option value="1">Kantin 1</option>
+                    <option value="2">Kantin 2</option>
+                    <option value="3">Kantin 3</option>
+                    <option value="4">Kantin 4</option>
+                    <option value="5">Kantin 5</option>
+                    <option value="6">Kantin 6</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Password Kantin:</label>
+                <input type="password" id="input-pass-kantin" placeholder="Masukkan Password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Masuk Sebagai Kantin</button>
+        </form>
+    </div>
+
+    <!-- VIEW 2: DASHBOARD MURID -->
+    <div id="view-pembeli" class="container hidden">
+        <div class="tab-nav">
+            <button type="button" id="btn-tab-pembeli-menu" class="btn-tab active" onclick="switchPembeliView('menu')">🍱 Katalog Menu</button>
+            <button type="button" id="btn-tab-pembeli-pesanan" class="btn-tab" onclick="switchPembeliView('pesanan')">🛒 Pesanan Saya</button>
+        </div>
+
+        <!-- TAB KATALOG -->
+        <div id="pembeli-view-menu">
+            <div class="filter-bar">
+                <label>Filter Kantin: </label>
+                <select id="filter-kantin" onchange="renderKatalogPembeli()">
+                    <option value="all">Semua Kantin</option>
+                    <option value="1">Kantin 1</option>
+                    <option value="2">Kantin 2</option>
+                    <option value="3">Kantin 3</option>
+                    <option value="4">Kantin 4</option>
+                    <option value="5">Kantin 5</option>
+                    <option value="6">Kantin 6</option>
+                </select>
+            </div>
+            <div id="grid-menu-pembeli" class="menu-grid"></div>
+        </div>
+
+        <!-- TAB PESANAN SAYA -->
+        <div id="pembeli-view-pesanan" class="hidden">
+            <h3>Riwayat Pesanan Anda</h3>
+            <div id="list-pesanan-pembeli" class="orders-list"></div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: DASHBOARD KANTIN -->
+    <div id="view-kantin" class="container hidden">
+        <div class="tab-nav">
+            <button type="button" id="btn-tab-kantin-pesanan" class="btn-tab active" onclick="switchKantinView('pesanan')">
+                📋 Pesanan Masuk <span id="badge-pesanan-kantin" class="badge-count hidden">0</span>
+            </button>
+            <button type="button" id="btn-tab-kantin-menu" class="btn-tab" onclick="switchKantinView('menu')">
+                🍔 Kelola Menu
+            </button>
+            <button type="button" id="btn-tab-kantin-selesai" class="btn-tab" onclick="switchKantinView('selesai')">
+                ✅ Pesanan Selesai
+            </button>
+        </div>
+
+        <!-- VIEW PESANAN MASUK -->
+        <div id="kantin-view-pesanan">
+            <h3 id="label-kantin-pesanan">Pesanan Masuk</h3>
+            <div id="list-pesanan-masuk" class="orders-list"></div>
+        </div>
+
+        <!-- VIEW KELOLA MENU -->
+        <div id="kantin-view-menu" class="hidden">
+            <div class="header-action">
+                <h3 id="label-kantin-menu">Kelola Menu & Stok</h3>
+                <button type="button" class="btn btn-success" onclick="bukaModalTambahMenu()">+ Tambah Menu Baru</button>
+            </div>
+            <div id="grid-menu-kantin" class="menu-grid"></div>
+        </div>
+
+        <!-- VIEW PESANAN SELESAI -->
+        <div id="kantin-view-selesai" class="hidden">
+            <h3>✅ Riwayat Pesanan Selesai</h3>
+            <div id="list-pesanan-selesai" class="orders-list"></div>
+        </div>
+    </div>
+
+    <!-- MODAL ORDER (PEMBELI) -->
+    <div id="modal-pesan" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-nama-menu">Pesan Menu</h3>
+            <p id="modal-kantin-menu" class="text-muted"></p>
+            
+            <div class="form-group">
+                <label>Pilih Varian:</label>
+                <select id="select-varian-item"></select>
+            </div>
+
+            <div class="form-group">
+                <label>Jumlah Porsi:</label>
+                <input type="number" id="input-jumlah-porsi" value="1" min="1" onchange="updateTotalHargaPesan()" oninput="updateTotalHargaPesan()">
+            </div>
+
+            <div class="form-group">
+                <label>Catatan Pesanan:</label>
+                <textarea id="input-catatan-pesan" placeholder="Contoh: Pedas, Tanpa Bawang..."></textarea>
+            </div>
+
+            <h4 id="modal-harga-menu">Total: Rp 0</h4>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="tutupModalPesan()">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="konfirmasiKirimPesanan()">Kirim Pesanan</button>
             </div>
         </div>
-    </header>
+    </div>
 
-    <main class="container">
-
-        <!-- ================= VIEW 1: LOGIN SISWA & PENJUAL ================= -->
-        <section id="view-login" class="card login-box">
-            <h2>Masuk ke E-Kantin</h2>
-            <p class="login-subtext">Pilih akses masuk sebagai siswa atau pengelola kantin.</p>
-
-            <div class="login-tabs">
-                <button type="button" id="tab-btn-murid" class="tab-btn active" onclick="gantiTabLogin('murid')">Siswa / Murid</button>
-                <button type="button" id="tab-btn-kantin" class="tab-btn" onclick="gantiTabLogin('kantin')">Penjual Kantin</button>
-            </div>
-
-            <!-- Form Login Murid -->
-            <form id="form-login-murid" onsubmit="loginMurid(event)">
-                <label for="input-nama-murid">Nama Siswa:</label>
-                <input type="text" id="input-nama-murid" placeholder="Masukkan disini" required>
-                
-                <label for="input-kelas-murid">Kelas:</label>
-                <input type="text" id="input-kelas-murid" placeholder="Contoh: 10 RPL C" required>
-
-                <label for="input-kode-murid">Kode Unik Siswa:</label>
-                <input type="password" id="input-kode-murid" placeholder="Masukkan kode unik rahasiamu" required>
-                <small class="hint-text">*Gunakan kode unik yang sama saat masuk kembali agar akun & pesananmu tidak tertukar.</small>
-                
-                <button type="submit" class="btn btn-primary full-width">Masuk Sebagai Murid</button>
-            </form>
-
-            <!-- Form Login Penjual Kantin -->
-            <form id="form-login-kantin" class="hidden" onsubmit="loginKantin(event)">
-                <label for="select-kantin-login">Pilih Kantin Anda:</label>
-                <select id="select-kantin-login" required>
-                    <option value="1">Kantin 1 (Bu 1)</option>
-                    <option value="2">Kantin 2 (Pak 2)</option>
-                    <option value="3">Kantin 3 (Mbak 3)</option>
-                    <option value="4">Kantin 4 (Bu 4)</option>
-                    <option value="5">Kantin 5 (Mas 5)</option>
-                    <option value="6">Kantin 6 (Mbak 6)</option>
-                </select>
-
-                <label for="input-pass-kantin">Password:</label>
-                <input type="password" id="input-pass-kantin" placeholder="Masukkan password kantin" required>
-
-                <button type="submit" class="btn btn-primary full-width">Masuk ke Dashboard Penjual</button>
-            </form>
-
-        
-        </section>
-
-        <!-- ================= VIEW 2: DASHBOARD MURID ================= -->
-        <section id="view-pembeli" class="hidden">
-            <div class="nav-tabs">
-                <button type="button" class="sub-tab active" id="btn-tab-pembeli-menu" onclick="switchPembeliView('menu')">Katalog Menu Kantin</button>
-                <button type="button" class="sub-tab" id="btn-tab-pembeli-pesanan" onclick="switchPembeliView('pesanan')">
-                    Pesanan Saya <span id="badge-pembeli-count" class="badge-count hidden">0</span>
-                </button>
-            </div>
-
-            <div id="pembeli-view-menu">
-                <div class="filter-wrapper">
-                    <label>Pilih Kantin: </label>
-                    <select id="filter-kantin" onchange="renderKatalogPembeli()">
-                        <option value="all">Semua Kantin (1 s/d 6)</option>
-                        <option value="1">Kantin 1 (Bu 1)</option>
-                        <option value="2">Kantin 2 (Pak 2)</option>
-                        <option value="3">Kantin 3 (Mbak 3)</option>
-                        <option value="4">Kantin 4 (Bu 4)</option>
-                        <option value="5">Kantin 5 (Mas 5)</option>
-                        <option value="6">Kantin 6 (Mbak 6)</option>
+    <!-- MODAL TAMBAH MENU (KANTIN) -->
+    <div id="modal-tambah-menu" class="modal hidden">
+        <div class="modal-content">
+            <h3>Tambah Menu Baru</h3>
+            <form onsubmit="simpanMenuBaru(event)">
+                <div class="form-group">
+                    <label>Nama Makanan / Minuman:</label>
+                    <input type="text" id="new-menu-nama" required>
+                </div>
+                <div class="form-group">
+                    <label>Kategori:</label>
+                    <select id="new-menu-kategori">
+                        <option value="Makanan">Makanan</option>
+                        <option value="Minuman">Minuman</option>
+                        <option value="Snack">Snack</option>
                     </select>
                 </div>
-                <div id="grid-menu-pembeli" class="menu-grid"></div>
-            </div>
-
-            <div id="pembeli-view-pesanan" class="hidden">
-                <div class="takeaway-banner">
-                    📦 <strong>Sistem Take Away:</strong> Saat pesanan berstatus <em>"Siap Diambil"</em>, silakan langsung ambil makananmu di stand kantin yang bersangkutan!
+                <div class="form-group">
+                    <label>Varian (Pisahkan dengan koma):</label>
+                    <input type="text" id="new-menu-varian" placeholder="Contoh: Pedas, Manis, Original">
                 </div>
-                <div id="list-pesanan-pembeli" class="order-list"></div>
-            </div>
-        </section>
+                <div class="form-group">
+                    <label>Harga (Rp):</label>
+                    <input type="number" id="new-menu-harga" required>
+                </div>
+                <div class="form-group">
+                    <label>Stok Awal:</label>
+                    <input type="number" id="new-menu-stok" required>
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi Singkat:</label>
+                    <input type="text" id="new-menu-desc">
+                </div>
+                <div class="form-group">
+                    <label>URL Gambar (Opsional):</label>
+                    <input type="text" id="new-menu-foto-link" placeholder="https://...">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="tutupModalTambahMenu()">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Menu</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        <!-- ================= VIEW 3: DASHBOARD PENJUAL KANTIN ================= -->
-        <section id="view-kantin" class="hidden">
-            <div class="nav-tabs">
+    <!-- ELEMEN AUDIO NOTIFIKASI -->
+    <audio id="sound-notif" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" crossorigin="anonymous"></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
                 <button type="button" class="sub-tab active" id="btn-tab-kantin-pesanan" onclick="switchKantinView('pesanan')">
                     📥 Pesanan Masuk <span id="badge-pesanan-kantin" class="badge-count hidden">0</span>
                 </button>
