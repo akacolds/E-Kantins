@@ -3,7 +3,9 @@
 // ==========================================
 const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d3ZhZ3R1eWVycWptcWtrbXRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjIxMTAsImV4cCI6MjEwNDM5ODExMH0.jkJAEQ9Hvj-_LgF8g0XYEOs7ScVySlG8aYqT1K-UC1A'; 
+
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // ==========================================
 // 2. DATA KANTIN & STATE APLIKASI
 // ==========================================
@@ -80,17 +82,61 @@ async function handleSignUp(e) {
     return;
   }
 
-  alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
   document.getElementById('form-register').reset();
   
-  if (data.user) {
-    enterApp(`Siswa: ${username} (${studentClass})`);
+  // Cek apakah butuh verifikasi OTP (Jika Confirm Email aktif di Supabase)
+  if (data.user && !data.session) {
+    alert(`Pendaftaran Berhasil! Silakan cek email kamu untuk melihat kode OTP.`);
+    showOtpForm(email);
   } else {
-    switchAuthTab('login');
+    alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
+    enterApp(`Siswa: ${username} (${studentClass})`);
   }
 }
 
-// --- PROSES SIGN IN (CEK TABEL kantin_users & SUPABASE AUTH) ---
+// --- MODIFIKASI SAAT SIGN UP BERHASIL (FORM OTP) ---
+function showOtpForm(email) {
+    document.getElementById('form-register').classList.add('hidden');
+    const otpPortal = document.getElementById('otp-portal');
+    if (otpPortal) {
+        otpPortal.classList.remove('hidden');
+        document.getElementById('otp-email').value = email;
+    }
+}
+
+// --- PROSES VERIFIKASI KODE OTP ---
+async function handleVerifyOtp() {
+    const email = document.getElementById('otp-email').value.trim();
+    const token = document.getElementById('otp-code').value.trim();
+    const submitBtn = document.getElementById('btn-verify-otp');
+
+    if (!token || token.length !== 6) {
+        alert("Masukkan 6 digit kode OTP yang valid!");
+        return;
+    }
+
+    submitBtn.innerText = 'Memverifikasi...';
+    submitBtn.disabled = true;
+
+    const { data, error } = await supabaseClient.auth.verifyOtp({
+        email: email,
+        token: token,
+        type: 'signup'
+    });
+
+    submitBtn.innerText = 'Verifikasi Kode';
+    submitBtn.disabled = false;
+
+    if (error) {
+        alert(`Gagal Verifikasi: ${error.message}`);
+    } else {
+        alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
+        document.getElementById('otp-portal').classList.add('hidden');
+        enterApp(`Siswa: ${email}`);
+    }
+}
+
+// --- PROSES SIGN IN ---
 async function handleSignIn(e) {
   e.preventDefault();
   const userInput = document.getElementById('login-email').value.trim();
@@ -101,7 +147,7 @@ async function handleSignIn(e) {
   submitBtn.disabled = true;
 
   try {
-    // 1. Cek ke tabel `kantin_users` di Supabase (Admin & Pemilik Kantin)
+    // 1. Cek ke tabel `kantin_users` (Admin & Pemilik Kantin)
     const { data: userAccount, error: dbError } = await supabaseClient
       .from('kantin_users')
       .select('*')
@@ -118,7 +164,7 @@ async function handleSignIn(e) {
       return;
     }
 
-    // 2. Jika tidak ada di `kantin_users`, Cek Login via Supabase Auth (Siswa)
+    // 2. Cek Login via Supabase Auth (Siswa)
     const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
       email: userInput,
       password: passwordInput,
@@ -167,6 +213,8 @@ async function logout() {
 // ==========================================
 async function fetchProducts() {
   const list = document.getElementById('product-list');
+  if (!list) return;
+  
   list.innerHTML = `<p class="text-slate-400 col-span-full italic text-center py-8">Memuat data menu...</p>`;
 
   const { data, error } = await supabaseClient
@@ -229,6 +277,8 @@ async function deleteProduct(id) {
 
 function renderTabs() {
   const tabs = document.getElementById('kantin-tabs');
+  if (!tabs) return;
+  
   tabs.innerHTML = '';
   for (let i = 1; i <= 6; i++) {
     const active = activeCanteen === i;
@@ -248,10 +298,14 @@ function selectCanteen(id) {
 
 function renderCanteen(id) {
   const layout = canteenLayouts[id];
-  document.getElementById('canteen-name').innerText = layout.name;
-  document.getElementById('canteen-desc').innerText = layout.desc;
+  const canteenNameEl = document.getElementById('canteen-name');
+  const canteenDescEl = document.getElementById('canteen-desc');
+  if (canteenNameEl) canteenNameEl.innerText = layout.name;
+  if (canteenDescEl) canteenDescEl.innerText = layout.desc;
 
   const list = document.getElementById('product-list');
+  if (!list) return;
+
   const filtered = products.filter(p => p.canteenId === id);
 
   if (filtered.length === 0) {
@@ -282,21 +336,23 @@ function renderCanteen(id) {
 
 function changeRole(role) {
   currentRole = role;
-  document.getElementById('role-display').innerText = `Role: ${role.toUpperCase()}`;
+  const roleDisplay = document.getElementById('role-display');
+  if (roleDisplay) roleDisplay.innerText = `Role: ${role.toUpperCase()}`;
 
   const adminPage = document.getElementById('page-admin');
   const ownerPage = document.getElementById('page-owner');
 
-  adminPage.classList.add('hidden');
-  ownerPage.classList.add('hidden');
+  if (adminPage) adminPage.classList.add('hidden');
+  if (ownerPage) ownerPage.classList.add('hidden');
 
   if (role === 'admin') {
-    adminPage.classList.remove('hidden');
+    if (adminPage) adminPage.classList.remove('hidden');
     renderAdminStats();
   } else if (role.startsWith('kantin')) {
     const canteenNum = parseInt(role.replace('kantin', ''));
-    ownerPage.classList.remove('hidden');
-    document.getElementById('owner-title').innerText = `Manajemen Menu (Kantin ${canteenNum})`;
+    if (ownerPage) ownerPage.classList.remove('hidden');
+    const ownerTitle = document.getElementById('owner-title');
+    if (ownerTitle) ownerTitle.innerText = `Manajemen Menu (Kantin ${canteenNum})`;
     selectCanteen(canteenNum);
   }
 
@@ -305,6 +361,8 @@ function changeRole(role) {
 
 function renderAdminStats() {
   const stats = document.getElementById('admin-stats');
+  if (!stats) return;
+  
   stats.innerHTML = '';
   for (let i = 1; i <= 6; i++) {
     const count = products.filter(p => p.canteenId === i).length;
@@ -322,45 +380,3 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTabs();
   fetchProducts();
 });
-
-// --- MODIFIKASI SAAT SIGN UP BERHASIL ---
-// Jika fitur "Confirm email" di Supabase NYALA, user akan diarahkan ke input OTP ini
-function showOtpForm(email) {
-    document.getElementById('form-register').classList.add('hidden');
-    document.getElementById('otp-portal').classList.remove('hidden');
-    document.getElementById('otp-email').value = email;
-}
-
-// --- PROSES VERIFIKASI KODE OTP ---
-async function handleVerifyOtp() {
-    const email = document.getElementById('otp-email').value.trim();
-    const token = document.getElementById('otp-code').value.trim();
-    const submitBtn = document.getElementById('btn-verify-otp');
-
-    if (!token || token.length !== 6) {
-        alert("Masukkan 6 digit kode OTP yang valid!");
-        return;
-    }
-
-    submitBtn.innerText = 'Memverifikasi...';
-    submitBtn.disabled = true;
-
-    // Fungsi bawaan Supabase untuk verifikasi token OTP signup
-    const { data, error } = await supabaseClient.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'signup' // Karena ini verifikasi pendaftaran akun baru
-    });
-
-    submitBtn.innerText = 'Verifikasi Kode';
-    submitBtn.disabled = false;
-
-    if (error) {
-        alert(`Gagal Verifikasi: ${error.message}`);
-    } else {
-        alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
-        document.getElementById('otp-portal').classList.add('hidden');
-        // Masuk ke aplikasi utama
-        enterApp(`Siswa: ${email}`);
-    }
-}
