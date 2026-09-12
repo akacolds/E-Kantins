@@ -322,3 +322,45 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTabs();
   fetchProducts();
 });
+
+// --- MODIFIKASI SAAT SIGN UP BERHASIL ---
+// Jika fitur "Confirm email" di Supabase NYALA, user akan diarahkan ke input OTP ini
+function showOtpForm(email) {
+    document.getElementById('form-register').classList.add('hidden');
+    document.getElementById('otp-portal').classList.remove('hidden');
+    document.getElementById('otp-email').value = email;
+}
+
+// --- PROSES VERIFIKASI KODE OTP ---
+async function handleVerifyOtp() {
+    const email = document.getElementById('otp-email').value.trim();
+    const token = document.getElementById('otp-code').value.trim();
+    const submitBtn = document.getElementById('btn-verify-otp');
+
+    if (!token || token.length !== 6) {
+        alert("Masukkan 6 digit kode OTP yang valid!");
+        return;
+    }
+
+    submitBtn.innerText = 'Memverifikasi...';
+    submitBtn.disabled = true;
+
+    // Fungsi bawaan Supabase untuk verifikasi token OTP signup
+    const { data, error } = await supabaseClient.auth.verifyOtp({
+        email: email,
+        token: token,
+        type: 'signup' // Karena ini verifikasi pendaftaran akun baru
+    });
+
+    submitBtn.innerText = 'Verifikasi Kode';
+    submitBtn.disabled = false;
+
+    if (error) {
+        alert(`Gagal Verifikasi: ${error.message}`);
+    } else {
+        alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
+        document.getElementById('otp-portal').classList.add('hidden');
+        // Masuk ke aplikasi utama
+        enterApp(`Siswa: ${email}`);
+    }
+}
