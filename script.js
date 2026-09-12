@@ -1,15 +1,7 @@
-//===========================================
-// INI BUAT LOGIN YA MBUT
-//===========================================
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==========================================
 // 1. KONFIGURASI SUPABASE
 // ==========================================
-const SUPABASE_URL = 'https://ourpabonuhvntmugogky.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_qLSSiu0TuPnZxqEiqyrBBg_r0ymdsSM'; 
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==========================================
 // 2. DATA KANTIN & STATE APLIKASI
 // ==========================================
