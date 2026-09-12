@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Kantin Central</title>
+  <title>KantinKu </title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -39,17 +39,17 @@
         <div class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-black shadow-lg shadow-indigo-500/30">
           K
         </div>
-        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Portal Kantin Central</h1>
-        <p class="text-xs text-slate-500 mt-1">Masuk atau daftar akun siswa untuk memesan makanan</p>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">KantinKu</h1>
+        <p class="text-xs text-slate-500 mt-1">Masuk atau daftar akun</p>
       </div>
 
       <!-- TAB TOGGLE SIGN IN / SIGN UP -->
       <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
         <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition">
-          Sign In (Masuk)
+          Masuk
         </button>
         <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition">
-          Sign Up (Daftar Siswa)
+          Daftar
         </button>
       </div>
 
@@ -79,7 +79,7 @@
       <!-- FORM SIGN UP (DAFTAR AKUN SISWA BARU) -->
       <form id="form-register" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama</label>
           <div class="relative">
             <i class="ri-user-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
             <input type="text" id="reg-name" placeholder="Budi Santoso" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
@@ -87,7 +87,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Username Siswa</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Username</label>
           <div class="relative">
             <i class="ri-at-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
             <input type="text" id="reg-username" placeholder="budisantoso12" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
@@ -95,19 +95,10 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pilih Kelas</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kelas</label>
           <div class="relative">
             <i class="ri-community-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <select id="reg-class" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition appearance-none cursor-pointer">
-              <option value="" disabled selected>-- Pilih Kelas --</option>
-              <option value="10 IPA 1">10 IPA 1</option>
-              <option value="10 IPA 2">10 IPA 2</option>
-              <option value="10 IPS 1">10 IPS 1</option>
-              <option value="11 IPA 1">11 IPA 1</option>
-              <option value="11 IPS 1">11 IPS 1</option>
-              <option value="12 IPA 1">12 IPA 1</option>
-              <option value="12 IPS 1">12 IPS 1</option>
-            </select>
+            <input type="text" id="reg-class" placeholder="Ketik kelas (misal: XII RPL 1)" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
           </div>
         </div>
 
@@ -119,17 +110,16 @@
           </div>
         </div>
 
-<div>
-  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kelas</label>
-  <div class="relative">
-    <i class="ri-community-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-    <input type="text" id="reg-class" placeholder="Ketik kelas (misal: XII RPL 1)" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
-  </div>
-</div>
-
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+          <div class="relative">
+            <i class="ri-lock-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="password" id="reg-password" placeholder="Minimal 6 karakter" minlength="6" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+          </div>
+        </div>
 
         <button type="submit" id="btn-register-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer">
-          Daftar Akun Siswa
+          Daftar Aku
         </button>
       </form>
 
@@ -158,8 +148,8 @@
         <div class="flex items-center space-x-3">
           <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-lg">K</div>
           <div>
-            <h2 class="font-bold text-sm leading-none">KantinCentral</h2>
-            <p class="text-[10px] text-slate-400">Digital Food Court</p>
+            <h2 class="font-bold text-sm leading-none">KantinKu</h2>
+            <p class="text-[10px] text-slate-400">pilat</p>
           </div>
         </div>
 
