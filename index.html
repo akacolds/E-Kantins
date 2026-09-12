@@ -137,7 +137,20 @@
 
     </div>
   </div>
+<!-- otp -->
+<div id="otp-portal" class="hidden mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+    <h3 class="font-bold text-slate-800 text-sm mb-2">Masukkan Kode OTP Verifikasi</h3>
+    <p class="text-xs text-slate-500 mb-3">Kode 6 digit telah dikirim ke email kamu.</p>
+    
+    <input type="email" id="otp-email" placeholder="Email kamu" class="w-full p-2 mb-2 border rounded text-sm" readonly>
+    <input type="text" id="otp-code" placeholder="123456" maxlength="6" class="w-full p-2 mb-2 border rounded text-sm font-mono tracking-widest text-center">
+    
+    <button type="button" onclick="handleVerifyOtp()" id="btn-verify-otp" class="w-full py-2 bg-emerald-600 text-white rounded font-bold text-xs">
+        Verifikasi Kode
+    </button>
+</div>
 
+  
   <!-- ==========================================
        2. DASHBOARD & KATALOG UTAMA
        ========================================== -->
