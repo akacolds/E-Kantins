@@ -1,238 +1,244 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Kantin Sekolah</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Kantin Central</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Remix Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- HEADER -->
-    <header>
-        <div class="header-inner">
-            <div>
-                <h1>E-Kantin Sekolah</h1>
-                <div id="sub-header-title">Pesan Makanan & Minuman Tanpa Antri</div>
-            </div>
-            
-            <!-- USER SESSION BAR -->
-            <div id="user-session-bar" class="user-bar hidden">
-                <span id="session-user-text"></span>
-                <button type="button" class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
-            </div>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .canteen-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .canteen-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+  <!-- ==========================================
+       1. PORTAL AUTHENTICATION (LOGIN & SIGN UP)
+       ========================================== -->
+  <div id="login-portal" class="flex-grow flex items-center justify-center p-4 my-auto">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200/80 p-8 my-6">
+      
+      <!-- HEADER PORTAL -->
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-black shadow-lg shadow-indigo-500/30">
+          K
         </div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Portal Kantin Central</h1>
+        <p class="text-xs text-slate-500 mt-1">Masuk atau daftar akun siswa untuk memesan makanan</p>
+      </div>
+
+      <!-- TAB TOGGLE SIGN IN / SIGN UP -->
+      <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+        <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition">
+          Sign In (Masuk)
+        </button>
+        <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition">
+          Sign Up (Daftar Siswa)
+        </button>
+      </div>
+
+      <!-- FORM SIGN IN (MASUK) -->
+      <form id="form-login" onsubmit="handleSignIn(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email / Username</label>
+          <div class="relative">
+            <i class="ri-user-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="login-email" placeholder="Email siswa atau username pengelola" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+          <div class="relative">
+            <i class="ri-lock-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="password" id="login-password" placeholder="••••••••" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl text-sm shadow-md shadow-indigo-600/20 transition cursor-pointer">
+          Masuk ke System
+        </button>
+      </form>
+
+      <!-- FORM SIGN UP (DAFTAR AKUN SISWA BARU) -->
+      <form id="form-register" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+          <div class="relative">
+            <i class="ri-user-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="reg-name" placeholder="Budi Santoso" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Username Siswa</label>
+          <div class="relative">
+            <i class="ri-at-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="reg-username" placeholder="budisantoso12" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pilih Kelas</label>
+          <div class="relative">
+            <i class="ri-community-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <select id="reg-class" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition appearance-none cursor-pointer">
+              <option value="" disabled selected>-- Pilih Kelas --</option>
+              <option value="10 IPA 1">10 IPA 1</option>
+              <option value="10 IPA 2">10 IPA 2</option>
+              <option value="10 IPS 1">10 IPS 1</option>
+              <option value="11 IPA 1">11 IPA 1</option>
+              <option value="11 IPS 1">11 IPS 1</option>
+              <option value="12 IPA 1">12 IPA 1</option>
+              <option value="12 IPS 1">12 IPS 1</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email Siswa</label>
+          <div class="relative">
+            <i class="ri-mail-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="email" id="reg-email" placeholder="budi@gmail.com" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+          <div class="relative">
+            <i class="ri-lock-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="password" id="reg-password" placeholder="Minimal 6 karakter" minlength="6" required class="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-register-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer">
+          Daftar Akun Siswa
+        </button>
+      </form>
+
+      <!-- DIVIDER -->
+      <div class="relative my-6 text-center">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+        <span class="relative bg-white px-3 text-xs text-slate-400 font-medium">atau</span>
+      </div>
+
+      <!-- TOMBOL MASUK GUEST -->
+      <button type="button" onclick="loginGuest()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2 border border-slate-200 cursor-pointer">
+        <i class="ri-eye-line text-base"></i>
+        <span>Lihat Menu Makanan (Tanpa Login)</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ==========================================
+       2. DASHBOARD & KATALOG UTAMA
+       ========================================== -->
+  <div id="main-app" class="hidden min-h-screen flex flex-col">
+    <!-- NAVBAR -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-lg">K</div>
+          <div>
+            <h2 class="font-bold text-sm leading-none">KantinCentral</h2>
+            <p class="text-[10px] text-slate-400">Digital Food Court</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span id="role-display" class="text-xs bg-slate-800 text-indigo-400 px-3 py-1 rounded-full font-semibold border border-slate-700">Role: Guest</span>
+          <button type="button" onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center space-x-1 cursor-pointer">
+            <i class="ri-logout-box-r-line"></i>
+            <span>Keluar</span>
+          </button>
+        </div>
+      </div>
     </header>
 
-    <!-- VIEW 1: LOGIN -->
-    <div id="view-login" class="container">
-        <div class="card login-box">
-            <h2>Selamat Datang</h2>
-            <p class="login-subtext">Silakan pilih peran kamu untuk masuk ke sistem.</p>
-            
-            <div class="login-tabs">
-                <button type="button" id="tab-btn-murid" class="tab-btn active" onclick="gantiTabLogin('murid')">🎓 Siswa</button>
-                <button type="button" id="tab-btn-kantin" class="tab-btn" onclick="gantiTabLogin('kantin')">🍔 Kantin</button>
-            </div>
+    <!-- CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
 
-            <!-- FORM LOGIN MURID -->
-            <form id="form-login-murid" onsubmit="loginMurid(event)">
-                <div class="form-group">
-                    <label>Nama Lengkap Siswa:</label>
-                    <input type="text" id="input-nama-murid" placeholder="Contoh: Budi Santoso" required>
-                </div>
-                <div class="form-group">
-                    <label>Kelas:</label>
-                    <input type="text" id="input-kelas-murid" placeholder="Contoh: X RPL 1" required>
-                </div>
-                <div class="form-group">
-                    <label>Kode Unik Siswa:</label>
-                    <input type="text" id="input-kode-murid" placeholder="Contoh: 1234" required>
-                </div>
-                <button type="submit" class="btn btn-primary full-width">Masuk Sebagai Siswa</button>
-            </form>
-
-            <!-- FORM LOGIN KANTIN -->
-            <form id="form-login-kantin" class="hidden" onsubmit="loginKantin(event)">
-                <div class="form-group">
-                    <label>Pilih Kantin:</label>
-                    <select id="select-kantin-login">
-                        <option value="1">Kantin 1</option>
-                        <option value="2">Kantin 2</option>
-                        <option value="3">Kantin 3</option>
-                        <option value="4">Kantin 4</option>
-                        <option value="5">Kantin 5</option>
-                        <option value="6">Kantin 6</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Password Kantin:</label>
-                    <input type="password" id="input-pass-kantin" placeholder="Masukkan Password" required>
-                </div>
-                <button type="submit" class="btn btn-primary full-width">Masuk Sebagai Kantin</button>
-            </form>
+      <!-- DASHBOARD ADMIN -->
+      <section id="page-admin" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center space-x-3 mb-4">
+          <i class="ri-dashboard-line text-2xl text-rose-600"></i>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Panel Kontrol Admin</h3>
+            <p class="text-xs text-slate-500">Ringkasan total menu makanan terdaftar di seluruh kantin</p>
+          </div>
         </div>
-    </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="admin-stats"></div>
+      </section>
 
-    <!-- VIEW 2: DASHBOARD MURID -->
-    <div id="view-pembeli" class="container hidden">
-        <div class="nav-tabs">
-            <button type="button" id="btn-tab-pembeli-menu" class="sub-tab active" onclick="switchPembeliView('menu')">🍱 Katalog Menu</button>
-            <button type="button" id="btn-tab-pembeli-pesanan" class="sub-tab" onclick="switchPembeliView('pesanan')">🛒 Pesanan Saya</button>
+      <!-- PANEL PEMILIK KANTIN -->
+      <section id="page-owner" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center space-x-3 mb-6">
+          <i class="ri-store-2-line text-2xl text-emerald-600"></i>
+          <div>
+            <h3 id="owner-title" class="text-lg font-bold text-slate-900">Manajemen Menu Kantin</h3>
+            <p class="text-xs text-slate-500">Tambah atau hapus menu makanan yang dijual</p>
+          </div>
         </div>
 
-        <!-- TAB KATALOG -->
-        <div id="pembeli-view-menu">
-            <div class="filter-wrapper">
-                <div class="takeaway-banner">
-                    🚀 <strong>Sistem Take Away:</strong> Pesan via aplikasi, ambil saat makanan sudah siap!
-                </div>
-                <div class="filter-pesanan">
-                    <label>Filter Kantin: </label>
-                    <select id="filter-kantin" onchange="renderKatalogPembeli()">
-                        <option value="all">Semua Kantin</option>
-                        <option value="1">Kantin 1</option>
-                        <option value="2">Kantin 2</option>
-                        <option value="3">Kantin 3</option>
-                        <option value="4">Kantin 4</option>
-                        <option value="5">Kantin 5</option>
-                        <option value="6">Kantin 6</option>
-                    </select>
-                </div>
-            </div>
-            <div id="grid-menu-pembeli" class="menu-grid"></div>
+        <form id="add-product-form" onsubmit="handleAddProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Menu</label>
+            <input type="text" id="prod-name" placeholder="Misal: Nasi Goreng" required class="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Harga (Rp)</label>
+            <input type="number" id="prod-price" placeholder="12000" required class="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">URL Gambar (Opsional)</label>
+            <input type="url" id="prod-img" placeholder="https://..." class="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-lg transition cursor-pointer">Tambah Menu</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- KATALOG UTAMA -->
+      <section id="page-katalog" class="space-y-4">
+        <!-- TAB KANTIN 1 - 6 -->
+        <div class="flex space-x-2 overflow-x-auto pb-2" id="kantin-tabs"></div>
+
+        <!-- LIST PRODUK -->
+        <div id="canteen-display" class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <div class="mb-6 border-b border-slate-100 pb-4">
+            <h3 id="canteen-name" class="text-2xl font-bold text-slate-900"></h3>
+            <p id="canteen-desc" class="text-xs text-slate-500 mt-1"></p>
+          </div>
+          <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
         </div>
+      </section>
 
-        <!-- TAB PESANAN SAYA -->
-        <div id="pembeli-view-pesanan" class="hidden">
-            <div class="card">
-                <h3>Riwayat Pesanan Anda</h3>
-                <div id="list-pesanan-pembeli" class="order-list" style="margin-top: 15px;"></div>
-            </div>
-        </div>
-    </div>
+    </main>
 
-    <!-- VIEW 3: DASHBOARD KANTIN -->
-    <div id="view-kantin" class="container hidden">
-        <div class="nav-tabs">
-            <button type="button" id="btn-tab-kantin-pesanan" class="sub-tab active" onclick="switchKantinView('pesanan')">
-                📋 Pesanan Masuk <span id="badge-pesanan-kantin" class="badge-count hidden">0</span>
-            </button>
-            <button type="button" id="btn-tab-kantin-menu" class="sub-tab" onclick="switchKantinView('menu')">
-                🍔 Kelola Menu
-            </button>
-            <button type="button" id="btn-tab-kantin-selesai" class="sub-tab" onclick="switchKantinView('selesai')">
-                ✅ Pesanan Selesai
-            </button>
-        </div>
-
-        <!-- VIEW PESANAN MASUK -->
-        <div id="kantin-view-pesanan" class="card">
-            <h3 id="label-kantin-pesanan">Pesanan Masuk</h3>
-            <div id="list-pesanan-masuk" class="order-list" style="margin-top: 15px;"></div>
-        </div>
-
-        <!-- VIEW KELOLA MENU -->
-        <div id="kantin-view-menu" class="hidden">
-            <div class="menu-mgmt-header">
-                <h3 id="label-kantin-menu">Kelola Menu & Stok</h3>
-                <button type="button" class="btn btn-success" onclick="bukaModalTambahMenu()">+ Tambah Menu Baru</button>
-            </div>
-            <div id="grid-menu-kantin" class="menu-grid"></div>
-        </div>
-
-        <!-- VIEW PESANAN SELESAI -->
-        <div id="kantin-view-selesai" class="card hidden">
-            <h3>✅ Riwayat Pesanan Selesai</h3>
-            <div id="list-pesanan-selesai" class="order-list" style="margin-top: 15px;"></div>
-        </div>
-    </div>
-
-    <!-- MODAL ORDER (PEMBELI) -->
-    <div id="modal-pesan" class="modal-backdrop hidden">
-        <div class="modal-box">
-            <h3 id="modal-nama-menu">Pesan Menu</h3>
-            <p id="modal-kantin-menu" class="text-muted"></p>
-            
-            <div class="options-box">
-                <div class="form-group" style="margin-bottom: 10px;">
-                    <label>Pilih Varian:</label>
-                    <select id="select-varian-item"></select>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 10px;">
-                    <label>Jumlah Porsi:</label>
-                    <input type="number" id="input-jumlah-porsi" value="1" min="1" onchange="updateTotalHargaPesan()" oninput="updateTotalHargaPesan()">
-                </div>
-
-                <div class="form-group">
-                    <label>Catatan Pesanan:</label>
-                    <textarea id="input-catatan-pesan" placeholder="Contoh: Pedas, Tanpa Bawang..."></textarea>
-                </div>
-            </div>
-
-            <h4 id="modal-harga-menu" class="text-success" style="font-size:18px;">Total: Rp 0</h4>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="tutupModalPesan()">Batal</button>
-                <button type="button" class="btn btn-primary" onclick="konfirmasiKirimPesanan()">Kirim Pesanan</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL TAMBAH MENU (KANTIN) -->
-    <div id="modal-tambah-menu" class="modal-backdrop hidden">
-        <div class="modal-box">
-            <h3>Tambah Menu Baru</h3>
-            <form onsubmit="simpanMenuBaru(event)" style="margin-top: 15px;">
-                <div class="form-group">
-                    <label>Nama Makanan / Minuman:</label>
-                    <input type="text" id="new-menu-nama" required>
-                </div>
-                <div class="form-group">
-                    <label>Kategori:</label>
-                    <select id="new-menu-kategori">
-                        <option value="Makanan">Makanan</option>
-                        <option value="Minuman">Minuman</option>
-                        <option value="Snack">Snack</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Varian (Pisahkan dengan koma):</label>
-                    <input type="text" id="new-menu-varian" placeholder="Contoh: Pedas, Manis, Original">
-                </div>
-                <div class="form-group">
-                    <label>Harga (Rp):</label>
-                    <input type="number" id="new-menu-harga" required>
-                </div>
-                <div class="form-group">
-                    <label>Stok Awal:</label>
-                    <input type="number" id="new-menu-stok" required>
-                </div>
-                <div class="form-group">
-                    <label>Deskripsi Singkat:</label>
-                    <input type="text" id="new-menu-desc">
-                </div>
-                <div class="form-group">
-                    <label>URL Gambar (Opsional):</label>
-                    <input type="text" id="new-menu-foto-link" placeholder="https://...">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="tutupModalTambahMenu()">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Menu</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- AUDIO NOTIFIKASI -->
-    <audio id="sound-notif" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" crossorigin="anonymous"></audio>
-
-    <footer>
-        E-Kantin Sekolah &copy; 2026 - All Rights Reserved
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 text-center py-4 text-xs text-slate-400 mt-auto">
+      &copy; Kantin Central System
     </footer>
+  </div>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
