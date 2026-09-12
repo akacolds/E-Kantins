@@ -74,7 +74,7 @@ async function handleSignUp(e) {
     }
   });
 
-  submitBtn.innerText = 'Daftar Akun Siswa';
+  submitBtn.innerText = 'Daftar Aku';
   submitBtn.disabled = false;
 
   if (error) {
@@ -84,19 +84,31 @@ async function handleSignUp(e) {
 
   document.getElementById('form-register').reset();
   
-  // Cek apakah butuh verifikasi OTP (Jika Confirm Email aktif di Supabase)
+  // Cek apakah Supabase memerlukan verifikasi OTP (Jika Confirm Email aktif)
+  // Jika data.session kosong, berarti user harus verifikasi OTP dulu
   if (data.user && !data.session) {
     alert(`Pendaftaran Berhasil! Silakan cek email kamu untuk melihat kode OTP.`);
     showOtpForm(email);
   } else {
+    // Jika verifikasi email mati, langsung masuk ke aplikasi
     alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
     enterApp(`Siswa: ${username} (${studentClass})`);
   }
 }
 
-// --- MODIFIKASI SAAT SIGN UP BERHASIL (FORM OTP) ---
+// --- TAMPILKAN FORM OTP ---
 function showOtpForm(email) {
     document.getElementById('form-register').classList.add('hidden');
+    document.getElementById('form-login').classList.add('hidden');
+    
+    const tabsContainer = document.getElementById('auth-tabs-container');
+    const authDivider = document.getElementById('auth-divider');
+    const guestBtn = document.getElementById('btn-guest-container');
+    
+    if (tabsContainer) tabsContainer.classList.add('hidden');
+    if (authDivider) authDivider.classList.add('hidden');
+    if (guestBtn) guestBtn.classList.add('hidden');
+
     const otpPortal = document.getElementById('otp-portal');
     if (otpPortal) {
         otpPortal.classList.remove('hidden');
