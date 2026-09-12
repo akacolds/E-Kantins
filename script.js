@@ -1,3 +1,7 @@
+//===========================================
+// INI BUAT LOGIN YA MBUT
+//===========================================
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==========================================
 // 1. KONFIGURASI SUPABASE
 // ==========================================
