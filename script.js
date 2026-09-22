@@ -1,7 +1,7 @@
 // ==========================================
 // 1. KONFIGURASI SUPABASE
 // ==========================================
-const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
+const SUPABASE_URL = 'https://bxwvagtuqueryjmqkkmta.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d3ZhZ3R1eWVycWptcWtrbXRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjIxMTAsImV4cCI6MjEwNDM5ODExMH0.jkJAEQ9Hvj-_LgF8g0XYEOs7ScVySlG8aYqT1K-UC1A'; 
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -61,91 +61,98 @@ async function handleSignUp(e) {
   submitBtn.innerText = 'Memproses...';
   submitBtn.disabled = true;
 
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: {
-        full_name: name,
-        username: username,
-        student_class: studentClass,
-        role: 'siswa'
+  try {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          full_name: name,
+          username: username,
+          student_class: studentClass,
+          role: 'siswa'
+        }
       }
+    });
+
+    if (error) {
+      alert(`Gagal Mendaftar: ${error.message}`);
+      return;
     }
-  });
 
-  submitBtn.innerText = 'Daftar Aku';
-  submitBtn.disabled = false;
-
-  if (error) {
-    alert(`Gagal Mendaftar: ${error.message}`);
-    return;
-  }
-
-  document.getElementById('form-register').reset();
-  
-  // Cek apakah Supabase memerlukan verifikasi OTP (Jika Confirm Email aktif)
-  // Jika data.session kosong, berarti user harus verifikasi OTP dulu
-  if (data.user && !data.session) {
-    alert(`Pendaftaran Berhasil! Silakan cek email kamu untuk melihat kode OTP.`);
-    showOtpForm(email);
-  } else {
-    // Jika verifikasi email mati, langsung masuk ke aplikasi
-    alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
-    enterApp(`Siswa: ${username} (${studentClass})`);
+    document.getElementById('form-register').reset();
+    
+    if (data.user && !data.session) {
+      alert(`Pendaftaran Berhasil! Silakan cek email kamu untuk melihat kode OTP.`);
+      showOtpForm(email);
+    } else {
+      alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
+      enterApp(`Siswa: ${username} (${studentClass})`);
+    }
+  } catch (err) {
+    console.error("Error signup:", err);
+    alert("Terjadi kesalahan saat mendaftar: " + err.message);
+  } finally {
+    submitBtn.innerText = 'Daftar Aku';
+    submitBtn.disabled = false;
   }
 }
 
 // --- TAMPILKAN FORM OTP ---
 function showOtpForm(email) {
-    document.getElementById('form-register').classList.add('hidden');
-    document.getElementById('form-login').classList.add('hidden');
-    
-    const tabsContainer = document.getElementById('auth-tabs-container');
-    const authDivider = document.getElementById('auth-divider');
-    const guestBtn = document.getElementById('btn-guest-container');
-    
-    if (tabsContainer) tabsContainer.classList.add('hidden');
-    if (authDivider) authDivider.classList.add('hidden');
-    if (guestBtn) guestBtn.classList.add('hidden');
+  document.getElementById('form-register').classList.add('hidden');
+  document.getElementById('form-login').classList.add('hidden');
+  
+  const tabsContainer = document.getElementById('auth-tabs-container');
+  const authDivider = document.getElementById('auth-divider');
+  const guestBtn = document.getElementById('btn-guest-container');
+  
+  if (tabsContainer) tabsContainer.classList.add('hidden');
+  if (authDivider) authDivider.classList.add('hidden');
+  if (guestBtn) guestBtn.classList.add('hidden');
 
-    const otpPortal = document.getElementById('otp-portal');
-    if (otpPortal) {
-        otpPortal.classList.remove('hidden');
-        document.getElementById('otp-email').value = email;
-    }
+  const otpPortal = document.getElementById('otp-portal');
+  if (otpPortal) {
+    otpPortal.classList.remove('hidden');
+    document.getElementById('otp-email').value = email;
+  }
 }
 
 // --- PROSES VERIFIKASI KODE OTP ---
 async function handleVerifyOtp() {
-    const email = document.getElementById('otp-email').value.trim();
-    const token = document.getElementById('otp-code').value.trim();
-    const submitBtn = document.getElementById('btn-verify-otp');
+  const email = document.getElementById('otp-email').value.trim();
+  const token = document.getElementById('otp-code').value.trim();
+  const submitBtn = document.getElementById('btn-verify-otp');
 
-    if (!token || token.length !== 6) {
-        alert("Masukkan 6 digit kode OTP yang valid!");
-        return;
-    }
+  if (!token || token.length !== 6) {
+    alert("Masukkan 6 digit kode OTP yang valid!");
+    return;
+  }
 
-    submitBtn.innerText = 'Memverifikasi...';
-    submitBtn.disabled = true;
+  submitBtn.innerText = 'Memverifikasi...';
+  submitBtn.disabled = true;
 
+  try {
     const { data, error } = await supabaseClient.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'signup'
+      email: email,
+      token: token,
+      type: 'signup'
     });
 
+    if (error) {
+      alert(`Gagal Verifikasi: ${error.message}`);
+    } else {
+      alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
+      document.getElementById('otp-portal').classList.add('hidden');
+      enterApp(`Siswa: ${email}`);
+    }
+  } catch (err) {
+    console.error("Error OTP:", err);
+    alert("Terjadi masalah saat verifikasi OTP.");
+  } finally {
     submitBtn.innerText = 'Verifikasi Kode';
     submitBtn.disabled = false;
-
-    if (error) {
-        alert(`Gagal Verifikasi: ${error.message}`);
-    } else {
-        alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
-        document.getElementById('otp-portal').classList.add('hidden');
-        enterApp(`Siswa: ${email}`);
-    }
+  }
 }
 
 // --- PROSES SIGN IN ---
@@ -159,7 +166,7 @@ async function handleSignIn(e) {
   submitBtn.disabled = true;
 
   try {
-    // 1. Cek ke tabel `kantin_users` (Admin & Pemilik Kantin)
+    // 1. Cek ke tabel kantin_users (Admin / Pemilik Kantin)
     const { data: userAccount, error: dbError } = await supabaseClient
       .from('kantin_users')
       .select('*')
@@ -169,36 +176,31 @@ async function handleSignIn(e) {
 
     if (userAccount) {
       document.getElementById('form-login').reset();
-      submitBtn.innerText = 'Masuk ke System';
-      submitBtn.disabled = false;
-      
       enterApp(userAccount.role);
       return;
     }
 
-    // 2. Cek Login via Supabase Auth (Siswa)
+    // 2. Cek Login Siswa via Supabase Auth
     const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
       email: userInput,
       password: passwordInput,
     });
 
-    submitBtn.innerText = 'Masuk ke System';
-    submitBtn.disabled = false;
-
     if (authError) {
       alert("Username/Email atau Password salah!");
     } else {
       document.getElementById('form-login').reset();
-      const meta = authData.user.user_metadata;
-      const displayName = meta?.username || meta?.full_name || authData.user.email;
+      const meta = authData.user?.user_metadata;
+      const displayName = meta?.username || meta?.full_name || authData.user?.email || 'Siswa';
       const displayClass = meta?.student_class ? ` - ${meta.student_class}` : '';
       
       enterApp(`Siswa: ${displayName}${displayClass}`);
     }
 
   } catch (err) {
-    console.error("Error saat login:", err);
-    alert("Terjadi kesalahan sistem saat melakukan login.");
+    console.error("Error detail:", err);
+    alert("Gagal terhubung ke database: " + err.message);
+  } finally {
     submitBtn.innerText = 'Masuk ke System';
     submitBtn.disabled = false;
   }
@@ -229,26 +231,31 @@ async function fetchProducts() {
   
   list.innerHTML = `<p class="text-slate-400 col-span-full italic text-center py-8">Memuat data menu...</p>`;
 
-  const { data, error } = await supabaseClient
-    .from('products')
-    .select('*');
+  try {
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*');
 
-  if (error) {
-    console.error('Gagal mengambil data:', error);
-    list.innerHTML = `<p class="text-rose-500 col-span-full font-semibold text-center py-8">Gagal memuat data dari Supabase.</p>`;
-    return;
+    if (error) {
+      console.error('Gagal mengambil data:', error);
+      list.innerHTML = `<p class="text-rose-500 col-span-full font-semibold text-center py-8">Gagal memuat data dari Supabase.</p>`;
+      return;
+    }
+
+    products = (data || []).map(item => ({
+      id: item.id,
+      canteenId: item.canteen_id,
+      name: item.name,
+      price: item.price,
+      img: item.img
+    }));
+
+    renderCanteen(activeCanteen);
+    if (currentRole === 'admin') renderAdminStats();
+  } catch (err) {
+    console.error("Fetch error:", err);
+    list.innerHTML = `<p class="text-rose-500 col-span-full font-semibold text-center py-8">Koneksi terputus.</p>`;
   }
-
-  products = data.map(item => ({
-    id: item.id,
-    canteenId: item.canteen_id,
-    name: item.name,
-    price: item.price,
-    img: item.img
-  }));
-
-  renderCanteen(activeCanteen);
-  if (currentRole === 'admin') renderAdminStats();
 }
 
 async function handleAddProduct(e) {
