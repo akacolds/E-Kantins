@@ -108,7 +108,6 @@ _supabase
       const oldOrder = orderData.find(o => Number(o.id) === Number(payload.new.id));
       const updatedOrder = payload.new;
 
-      // Detect Chat Baru
       const oldChatCount = (oldOrder && oldOrder.chats) ? oldOrder.chats.length : 0;
       const newChats = updatedOrder.chats || [];
 
@@ -126,7 +125,6 @@ _supabase
           }
       }
 
-      // Detect Perubahan Status
       if (oldOrder && oldOrder.status !== updatedOrder.status) {
           if (currentUser && currentUser.role === 'murid' && updatedOrder.user_key === currentUser.userKey) {
               membunyikanNotif();
@@ -633,13 +631,48 @@ function tutupModalTambahMenu() {
 
 async function simpanMenuBaru(e) {
     e.preventDefault();
+    
+    const btnSimpan = document.getElementById('btn-simpan-menu');
+    btnSimpan.innerText = "Mengupload Gambar...";
+    btnSimpan.disabled = true;
+
     const nama = document.getElementById('new-menu-nama').value.trim();
     const kategori = document.getElementById('new-menu-kategori').value;
     const varianStr = document.getElementById('new-menu-varian').value;
     const harga = parseInt(document.getElementById('new-menu-harga').value, 10) || 0;
     const stok = parseInt(document.getElementById('new-menu-stok').value, 10) || 0;
     const desc = document.getElementById('new-menu-desc').value.trim();
-    const fotoLink = document.getElementById('new-menu-foto-link').value.trim();
+    const inputFile = document.getElementById('new-menu-foto-file');
+
+    let fotoUrl = "https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=400"; // Fallback default
+
+    // Proses Upload File ke Supabase Storage (Bucket: menu-foto)
+    if (inputFile.files && inputFile.files[0]) {
+        const file = inputFile.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await _supabase.storage
+            .from('menu-foto')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            alert("Gagal mengupload gambar: " + uploadError.message);
+            btnSimpan.innerText = "Simpan Menu";
+            btnSimpan.disabled = false;
+            return;
+        }
+
+        // Ambil Public URL dari Supabase Storage
+        const { data: publicUrlData } = _supabase.storage
+            .from('menu-foto')
+            .getPublicUrl(filePath);
+
+        if (publicUrlData) {
+            fotoUrl = publicUrlData.publicUrl;
+        }
+    }
 
     const arrVarian = varianStr.split(',').map(v => v.trim()).filter(v => v !== "");
 
@@ -652,12 +685,22 @@ async function simpanMenuBaru(e) {
         description: desc,
         harga: harga,
         stok: stok,
-        foto: fotoLink || "https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=400",
+        foto: fotoUrl,
         varian_list: arrVarian.length > 0 ? arrVarian : ["Original"]
     };
 
-    await _supabase.from('menu_kantin').insert([newItem]);
-    tutupModalTambahMenu();
+    const { error: insertError } = await _supabase.from('menu_kantin').insert([newItem]);
+    
+    if (insertError) {
+        alert("Gagal menyimpan menu ke database: " + insertError.message);
+    } else {
+        tutupModalTambahMenu();
+        e.target.reset(); // Reset form setelah sukses
+    }
+
+    btnSimpan.innerText = "Simpan Menu";
+    btnSimpan.disabled = false;
+
     menuData = await loadMenu();
     renderMenuKantin();
 }
