@@ -180,7 +180,7 @@
                 </div>
                 <div class="form-group">
                     <label>Varian (Pisahkan dengan koma)</label>
-                    <input type="text" id="new-menu-varian" placeholder="Contoh: Original, Pedas, Extra KeSub">
+                    <input type="text" id="new-menu-varian" placeholder="Contoh: Original, Pedas, Extra Keju">
                 </div>
                 <div class="form-group">
                     <label>Harga (Rp)</label>
@@ -194,13 +194,14 @@
                     <label>Deskripsi Singkat</label>
                     <textarea id="new-menu-desc" rows="2" placeholder="Penjelasan singkat menu..."></textarea>
                 </div>
+                <!-- Diubah dari URL Text menjadi Upload File Gambar -->
                 <div class="form-group">
-                    <label>URL Link Foto Gambar</label>
-                    <input type="url" id="new-menu-foto-link" placeholder="https://images.unsplash.com/...">
+                    <label>Upload Foto Gambar</label>
+                    <input type="file" id="new-menu-foto-file" accept="image/*" required>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="tutupModalTambahMenu()">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Menu</button>
+                    <button type="submit" class="btn btn-primary" id="btn-simpan-menu">Simpan Menu</button>
                 </div>
             </form>
         </div>
