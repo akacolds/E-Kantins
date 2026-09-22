@@ -161,7 +161,7 @@ async function handleSignIn(e) {
   submitBtn.disabled = true;
 
   try {
-    // 1. Cek ke tabel kantin_users (Admin / Pemilik Kantin)
+    // 1. Cek ke tabel kantin_users
     const { data: userAccount, error: dbError } = await supabaseClient
       .from('kantin_users')
       .select('*')
@@ -171,7 +171,17 @@ async function handleSignIn(e) {
 
     if (userAccount) {
       document.getElementById('form-login').reset();
-      enterApp(userAccount.role);
+      
+      // BIKIN ROLE OTOMATIS DARI kantin_id 
+      // Jika kantin_id 0 atau username 'admin', jadikan admin. Sisanya jadikan kantin1, kantin2, dll.
+      let assignedRole = 'guest';
+      if (userAccount.kantin_id === 0 || userAccount.username.toLowerCase() === 'admin') {
+        assignedRole = 'admin';
+      } else {
+        assignedRole = 'kantin' + userAccount.kantin_id;
+      }
+      
+      enterApp(assignedRole);
       return;
     }
 
@@ -227,7 +237,6 @@ async function fetchProducts() {
   list.innerHTML = `<p class="text-slate-400 col-span-full italic text-center py-8">Memuat data menu...</p>`;
 
   try {
-    // Menggunakan nama tabel yang benar sesuai database kamu: menu_kantin
     const { data, error } = await supabaseClient
       .from('menu_kantin')
       .select('*');
@@ -238,12 +247,13 @@ async function fetchProducts() {
       return;
     }
 
+    // MAPPING KOLOM DISESUAIKAN DENGAN TABEL ASLI
     products = (data || []).map(item => ({
       id: item.id,
-      canteenId: item.canteen_id,
-      name: item.name,
-      price: item.price,
-      img: item.img
+      canteenId: item.kantin_id, // sebelumnya item.canteen_id
+      name: item.nama,           // sebelumnya item.name
+      price: item.harga,         // sebelumnya item.price
+      img: item.foto             // sebelumnya item.img
     }));
 
     renderCanteen(activeCanteen);
@@ -261,9 +271,10 @@ async function handleAddProduct(e) {
   const price = parseInt(document.getElementById('prod-price').value);
   const img = document.getElementById('prod-img').value;
 
+  // PENAMAAN KOLOM INSERT DISESUAIKAN
   const { error } = await supabaseClient
     .from('menu_kantin')
-    .insert([{ canteen_id: canteenNum, name: name, price: price, img: img }]);
+    .insert([{ kantin_id: canteenNum, nama: name, harga: price, foto: img }]);
 
   if (error) {
     console.error('Gagal menambah menu:', error);
@@ -350,7 +361,6 @@ function renderCanteen(id) {
 }
 
 function changeRole(role) {
-  // Pengaman jika role di tabel Supabase kosong (null/undefined)
   const validRole = role || 'guest';
   currentRole = validRole;
   
@@ -393,7 +403,6 @@ function renderAdminStats() {
   }
 }
 
-// Inisialisasi awal
 document.addEventListener('DOMContentLoaded', () => {
   renderTabs();
   fetchProducts();
