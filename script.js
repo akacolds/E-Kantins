@@ -2,8 +2,8 @@
 // 1. KONFIGURASI SUPABASE
 // ==========================================
 
-const SUPABASE_URL = 'https://ourpabonuhvntmugogky.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_qLSSiu0TuPnZxqEiqyrBBg_r0ymdsSM';
+const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4mDuRGKRn_va09DOIe4wiQ_RIgO-1sd';
 const STORAGE_BUCKET = 'menu-images';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
