@@ -1,802 +1,783 @@
 // ==========================================
 // 1. KONFIGURASI SUPABASE
 // ==========================================
-const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d3ZhZ3R1eWVycWptcWtrbXRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjIxMTAsImV4cCI6MjEwNDM5ODExMH0.jkJAEQ9Hvj-_LgF8g0XYEOs7ScVySlG8aYqT1K-UC1A'; 
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'https://ourpabonuhvntmugogky.supabase.co';
+
+const SUPABASE_KEY =
+  'sb_publishable_qLSSiu0TuPnZxqEiqyrBBg_r0ymdsSM';
+
+const supabaseClient =
+  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
 // ==========================================
-// 2. DATA KANTIN & STATE APLIKASI
+// 2. AKUN
 // ==========================================
-const canteenLayouts = {
-  1: { name: "Kantin 1 - Spesialis Nasi & Berat", desc: "Menyediakan aneka nasi olahan segar dan lauk pauk." },
-  2: { name: "Kantin 2 - Bebakaran & Mie", desc: "Spesialis Mie Goreng, Rebus, dan Bakaran Pedas." },
-  3: { name: "Kantin 3 - Snack & Cold Drink", desc: "Tempat nongkrong dengan es boba, kopi, dan camilan renyah." },
-  4: { name: "Kantin 4 - Masakan Rumahan", desc: "Menu prasmanan sehat dan hemat kantong mahasiswa/siswa." },
-  5: { name: "Kantin 5 - Western & Fast Food", desc: "Burger, Dimsum, Kentang Goreng, dan Milkshake." },
-  6: { name: "Kantin 6 - Jus & Buah Segar", desc: "Jus buah murni, es buah, dan salad sehat." }
+
+const userAccounts = {
+  admin: {
+    password: 'admin123',
+    role: 'admin'
+  },
+
+  kantin1: {
+    password: 'kantin1pass',
+    role: 'kantin1'
+  },
+
+  kantin2: {
+    password: 'kantin2pass',
+    role: 'kantin2'
+  },
+
+  kantin3: {
+    password: 'kantin3pass',
+    role: 'kantin3'
+  },
+
+  kantin4: {
+    password: 'kantin4pass',
+    role: 'kantin4'
+  },
+
+  kantin5: {
+    password: 'kantin5pass',
+    role: 'kantin5'
+  },
+
+  kantin6: {
+    password: 'kantin6pass',
+    role: 'kantin6'
+  }
 };
 
+
+// ==========================================
+// 3. DATA KANTIN
+// ==========================================
+
+const canteenLayouts = {
+
+  1: {
+    name: 'Kantin 1 - Spesialis Nasi & Berat',
+    desc: 'Menyediakan aneka nasi olahan segar dan lauk pauk.'
+  },
+
+  2: {
+    name: 'Kantin 2 - Bebakaran & Mie',
+    desc: 'Spesialis Mie Goreng, Rebus, dan Bakaran Pedas.'
+  },
+
+  3: {
+    name: 'Kantin 3 - Snack & Cold Drink',
+    desc: 'Tempat nongkrong dengan es boba, kopi, dan camilan renyah.'
+  },
+
+  4: {
+    name: 'Kantin 4 - Masakan Rumahan',
+    desc: 'Menu prasmanan sehat dan hemat kantong mahasiswa/siswa.'
+  },
+
+  5: {
+    name: 'Kantin 5 - Western & Fast Food',
+    desc: 'Burger, Dimsum, Kentang Goreng, dan Milkshake.'
+  },
+
+  6: {
+    name: 'Kantin 6 - Jus & Buah Segar',
+    desc: 'Jus buah murni, es buah, dan salad sehat.'
+  }
+
+};
+
+
 let products = [];
+
 let currentRole = 'guest';
+
 let activeCanteen = 1;
 
-// ==========================================
-// 3. TOGGLE TAB LOGIN & REGISTER
-// ==========================================
-function switchAuthTab(tab) {
-  const loginForm = document.getElementById('form-login');
-  const registerForm = document.getElementById('form-register');
-  const loginBtn = document.getElementById('tab-login-btn');
-  const registerBtn = document.getElementById('tab-register-btn');
 
-  if (tab === 'login') {
-    loginForm.classList.remove('hidden');
-    registerForm.classList.add('hidden');
-    loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition";
-    registerBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition";
-  } else {
-    loginForm.classList.add('hidden');
-    registerForm.classList.remove('hidden');
-    registerBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-emerald-600 shadow-sm transition";
-    loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition";
-  }
+// ==========================================
+// 4. ELEMENT HELPER
+// ==========================================
+
+function $(id) {
+  return document.getElementById(id);
 }
 
+
 // ==========================================
-// 4. LOGIKA AUTHENTICATION (SIGN UP & SIGN IN)
+// 5. LOGIN
 // ==========================================
 
-// --- PROSES SIGN UP (DAFTAR AKUN SISWA) ---
-async function handleSignUp(e) {
+function handleAuthSubmit(e) {
+
   e.preventDefault();
-  const name = document.getElementById('reg-name').value.trim();
-  const username = document.getElementById('reg-username').value.trim();
-  const studentClass = document.getElementById('reg-class').value;
-  const email = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value.trim();
-  const submitBtn = document.getElementById('btn-register-submit');
 
-  submitBtn.innerText = 'Memproses...';
-  submitBtn.disabled = true;
+  const username = $('auth-username').value.trim();
+  const password = $('auth-password').value;
 
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: {
-        full_name: name,
-        username: username,
-        student_class: studentClass,
-        role: 'siswa'
-      }
-    }
-  });
+  const user = userAccounts[username];
 
-  submitBtn.innerText = 'Daftar Aku';
-  submitBtn.disabled = false;
+  if (!user || user.password !== password) {
 
-  if (error) {
-    alert(`Gagal Mendaftar: ${error.message}`);
+    alert('Username atau Password salah!');
+
     return;
   }
 
-  document.getElementById('form-register').reset();
-  
-  // Cek apakah Supabase memerlukan verifikasi OTP (Jika Confirm Email aktif)
-  // Jika data.session kosong, berarti user harus verifikasi OTP dulu
-  if (data.user && !data.session) {
-    alert(`Pendaftaran Berhasil! Silakan cek email kamu untuk melihat kode OTP.`);
-    showOtpForm(email);
-  } else {
-    // Jika verifikasi email mati, langsung masuk ke aplikasi
-    alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
-    enterApp(`Siswa: ${username} (${studentClass})`);
-  }
+  $('auth-form').reset();
+
+  enterApp(user.role);
 }
 
-// --- TAMPILKAN FORM OTP ---
-function showOtpForm(email) {
-    document.getElementById('form-register').classList.add('hidden');
-    document.getElementById('form-login').classList.add('hidden');
-    
-    const tabsContainer = document.getElementById('auth-tabs-container');
-    const authDivider = document.getElementById('auth-divider');
-    const guestBtn = document.getElementById('btn-guest-container');
-    
-    if (tabsContainer) tabsContainer.classList.add('hidden');
-    if (authDivider) authDivider.classList.add('hidden');
-    if (guestBtn) guestBtn.classList.add('hidden');
 
-    const otpPortal = document.getElementById('otp-portal');
-    if (otpPortal) {
-        otpPortal.classList.remove('hidden');
-        document.getElementById('otp-email').value = email;
-    }
-}
-
-// --- PROSES VERIFIKASI KODE OTP ---
-async function handleVerifyOtp() {
-    const email = document.getElementById('otp-email').value.trim();
-    const token = document.getElementById('otp-code').value.trim();
-    const submitBtn = document.getElementById('btn-verify-otp');
-
-    if (!token || token.length !== 6) {
-        alert("Masukkan 6 digit kode OTP yang valid!");
-        return;
-    }
-
-    submitBtn.innerText = 'Memverifikasi...';
-    submitBtn.disabled = true;
-
-    const { data, error } = await supabaseClient.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'signup'
-    });
-
-    submitBtn.innerText = 'Verifikasi Kode';
-    submitBtn.disabled = false;
-
-    if (error) {
-        alert(`Gagal Verifikasi: ${error.message}`);
-    } else {
-        alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
-        document.getElementById('otp-portal').classList.add('hidden');
-        enterApp(`Siswa: ${email}`);
-    }
-}
-
-// --- PROSES SIGN IN ---
-async function handleSignIn(e) {
-  e.preventDefault();
-  const userInput = document.getElementById('login-email').value.trim();
-  const passwordInput = document.getElementById('login-password').value.trim();
-  const submitBtn = document.getElementById('btn-login-submit');
-
-  submitBtn.innerText = 'Memeriksa...';
-  submitBtn.disabled = true;
-
-  try {
-    // 1. Cek ke tabel `kantin_users` (Admin & Pemilik Kantin)
-    const { data: userAccount, error: dbError } = await supabaseClient
-      .from('kantin_users')
-      .select('*')
-      .eq('username', userInput)
-      .eq('password', passwordInput)
-      .maybeSingle();
-
-    if (userAccount) {
-      document.getElementById('form-login').reset();
-      submitBtn.innerText = 'Masuk ke System';
-      submitBtn.disabled = false;
-      
-      enterApp(userAccount.role);
-      return;
-    }
-
-    // 2. Cek Login via Supabase Auth (Siswa)
-    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-      email: userInput,
-      password: passwordInput,
-    });
-
-    submitBtn.innerText = 'Masuk ke System';
-    submitBtn.disabled = false;
-
-    if (authError) {
-      alert("Username/Email atau Password salah!");
-    } else {
-      document.getElementById('form-login').reset();
-      const meta = authData.user.user_metadata;
-      const displayName = meta?.username || meta?.full_name || authData.user.email;
-      const displayClass = meta?.student_class ? ` - ${meta.student_class}` : '';
-      
-      enterApp(`Siswa: ${displayName}${displayClass}`);
-    }
-
-  } catch (err) {
-    console.error("Error saat login:", err);
-    alert("Terjadi kesalahan sistem saat melakukan login.");
-    submitBtn.innerText = 'Masuk ke System';
-    submitBtn.disabled = false;
-  }
-}
+// ==========================================
+// 6. LOGIN GUEST
+// ==========================================
 
 function loginGuest() {
+
   enterApp('guest');
+
 }
+
+
+// ==========================================
+// 7. MASUK APLIKASI
+// ==========================================
 
 function enterApp(role) {
-  document.getElementById('login-portal').classList.add('hidden');
-  document.getElementById('main-app').classList.remove('hidden');
+
+  $('login-portal').classList.add('hidden');
+
+  $('main-app').classList.remove('hidden');
+
   changeRole(role);
+
 }
 
-async function logout() {
-  await supabaseClient.auth.signOut();
-  document.getElementById('main-app').classList.add('hidden');
-  document.getElementById('login-portal').classList.remove('hidden');
-}
 
 // ==========================================
-// 5. DATABASE & UI RENDER (SUPABASE CRUD)
+// 8. LOGOUT
 // ==========================================
+
+function logout() {
+
+  currentRole = 'guest';
+
+  $('main-app').classList.add('hidden');
+
+  $('login-portal').classList.remove('hidden');
+
+}
+
+
+// ==========================================
+// 9. AMBIL DATA PRODUK
+// ==========================================
+
 async function fetchProducts() {
-  const list = document.getElementById('product-list');
-  if (!list) return;
-  
-  list.innerHTML = `<p class="text-slate-400 col-span-full italic text-center py-8">Memuat data menu...</p>`;
+
+  const list = $('product-list');
+
+  list.innerHTML = `
+    <p class="text-slate-400 col-span-full italic text-center py-8">
+      Memuat data menu...
+    </p>
+  `;
+
 
   const { data, error } = await supabaseClient
     .from('products')
-    .select('*');
+    .select('*')
+    .order('id', { ascending: true });
+
 
   if (error) {
+
     console.error('Gagal mengambil data:', error);
-    list.innerHTML = `<p class="text-rose-500 col-span-full font-semibold text-center py-8">Gagal memuat data dari Supabase.</p>`;
+
+    list.innerHTML = `
+      <div class="col-span-full text-center py-8">
+
+        <i class="ri-error-warning-line text-3xl text-rose-500"></i>
+
+        <p class="text-rose-500 font-semibold mt-2">
+          Gagal memuat data dari Supabase.
+        </p>
+
+        <p class="text-xs text-slate-400 mt-1">
+          Periksa koneksi atau konfigurasi database.
+        </p>
+
+      </div>
+    `;
+
     return;
   }
 
-  products = data.map(item => ({
+
+  products = (data || []).map(item => ({
+
     id: item.id,
-    canteenId: item.canteen_id,
+
+    canteenId: Number(item.canteen_id),
+
     name: item.name,
-    price: item.price,
-    img: item.img
+
+    price: Number(item.price),
+
+    img: item.img || ''
+
   }));
 
+
   renderCanteen(activeCanteen);
-  if (currentRole === 'admin') renderAdminStats();
+
+  renderAdminStats();
+
 }
 
+
+// ==========================================
+// 10. TAMBAH PRODUK
+// ==========================================
+
 async function handleAddProduct(e) {
+
   e.preventDefault();
-  const canteenNum = parseInt(currentRole.replace('kantin', ''));
-  const name = document.getElementById('prod-name').value;
-  const price = parseInt(document.getElementById('prod-price').value);
-  const img = document.getElementById('prod-img').value;
+
+
+  if (!currentRole.startsWith('kantin')) {
+
+    alert('Hanya pemilik kantin yang dapat menambahkan menu.');
+
+    return;
+  }
+
+
+  const canteenNum =
+    parseInt(currentRole.replace('kantin', ''));
+
+
+  const name =
+    $('prod-name').value.trim();
+
+
+  const price =
+    parseInt($('prod-price').value);
+
+
+  const img =
+    $('prod-img').value.trim();
+
+
+  if (!name) {
+
+    alert('Nama menu wajib diisi.');
+
+    return;
+  }
+
+
+  if (!Number.isFinite(price) || price < 0) {
+
+    alert('Harga tidak valid.');
+
+    return;
+  }
+
 
   const { error } = await supabaseClient
     .from('products')
-    .insert([{ canteen_id: canteenNum, name: name, price: price, img: img }]);
+    .insert([{
+      canteen_id: canteenNum,
+      name: name,
+      price: price,
+      img: img || null
+    }]);
+
 
   if (error) {
+
     console.error('Gagal menambah menu:', error);
+
     alert('Gagal menambah menu!');
-  } else {
-    document.getElementById('add-product-form').reset();
-    await fetchProducts();
+
+    return;
   }
+
+
+  $('add-product-form').reset();
+
+  await fetchProducts();
+
 }
 
+
+// ==========================================
+// 11. HAPUS PRODUK
+// ==========================================
+
 async function deleteProduct(id) {
-  if (!confirm("Apakah Anda yakin ingin menghapus menu ini?")) return;
+
+  const product =
+    products.find(p => p.id === id);
+
+
+  if (!product) {
+
+    alert('Menu tidak ditemukan.');
+
+    return;
+  }
+
+
+  // Admin boleh hapus semua.
+  // Pemilik hanya boleh hapus menu kantinnya.
+
+  if (
+    currentRole !== 'admin' &&
+    currentRole !== `kantin${product.canteenId}`
+  ) {
+
+    alert('Kamu tidak memiliki izin untuk menghapus menu ini.');
+
+    return;
+  }
+
+
+  if (!confirm(`Hapus menu "${product.name}"?`)) {
+
+    return;
+  }
+
 
   const { error } = await supabaseClient
     .from('products')
     .delete()
     .eq('id', id);
 
+
   if (error) {
+
     console.error('Gagal menghapus menu:', error);
+
     alert('Gagal menghapus menu!');
-  } else {
-    await fetchProducts();
-  }
-}
 
-function renderTabs() {
-  const tabs = document.getElementById('kantin-tabs');
-  if (!tabs) return;
-  
-  tabs.innerHTML = '';
-  for (let i = 1; i <= 6; i++) {
-    const active = activeCanteen === i;
-    tabs.innerHTML += `
-      <button type="button" onclick="selectCanteen(${i})" class="px-4 py-2 font-semibold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap ${active ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">
-        Kantin ${i}
-      </button>
-    `;
-  }
-}
-
-function selectCanteen(id) {
-  activeCanteen = id;
-  renderTabs();
-  renderCanteen(id);
-}
-
-function renderCanteen(id) {
-  const layout = canteenLayouts[id];
-  const canteenNameEl = document.getElementById('canteen-name');
-  const canteenDescEl = document.getElementById('canteen-desc');
-  if (canteenNameEl) canteenNameEl.innerText = layout.name;
-  if (canteenDescEl) canteenDescEl.innerText = layout.desc;
-
-  const list = document.getElementById('product-list');
-  if (!list) return;
-
-  const filtered = products.filter(p => p.canteenId === id);
-
-  if (filtered.length === 0) {
-    list.innerHTML = `<p class="text-slate-400 col-span-full italic py-8 text-center">Belum ada menu yang dijual di kantin ini.</p>`;
     return;
   }
 
-  list.innerHTML = filtered.map(p => `
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden canteen-card flex flex-col justify-between">
-      <div>
-        <img src="${p.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'}" class="h-44 w-full object-cover" alt="${p.name}">
-        <div class="p-4">
-          <h4 class="font-bold text-slate-800 text-base mb-1">${p.name}</h4>
-          <p class="text-emerald-600 font-extrabold text-sm">Rp ${p.price.toLocaleString('id-ID')}</p>
-        </div>
-      </div>
-      ${(currentRole === `kantin${id}` || currentRole === 'admin') ? `
-        <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-          <button type="button" onclick="deleteProduct(${p.id})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold flex items-center space-x-1 cursor-pointer">
-            <i class="ri-delete-bin-line"></i>
-            <span>Hapus</span>
-          </button>
-        </div>
-      ` : ''}
-    </div>
-  `).join('');
+
+  await fetchProducts();
+
 }
 
+
+// ==========================================
+// 12. TAB KANTIN
+// ==========================================
+
+function renderTabs() {
+
+  const tabs = $('kantin-tabs');
+
+  tabs.innerHTML = '';
+
+
+  for (let i = 1; i <= 6; i++) {
+
+    const active =
+      activeCanteen === i;
+
+
+    const button =
+      document.createElement('button');
+
+
+    button.type = 'button';
+
+    button.textContent = `Kantin ${i}`;
+
+    button.className = `
+      px-4 py-2
+      font-semibold
+      text-xs
+      rounded-xl
+      transition-all
+      whitespace-nowrap
+      ${
+        active
+          ? 'bg-indigo-600 text-white shadow-sm'
+          : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+      }
+    `;
+
+
+    button.addEventListener('click', () => {
+
+      selectCanteen(i);
+
+    });
+
+
+    tabs.appendChild(button);
+
+  }
+
+}
+
+
+// ==========================================
+// 13. PILIH KANTIN
+// ==========================================
+
+function selectCanteen(id) {
+
+  activeCanteen = Number(id);
+
+  renderTabs();
+
+  renderCanteen(activeCanteen);
+
+}
+
+
+// ==========================================
+// 14. RENDER KATALOG
+// ==========================================
+
+function renderCanteen(id) {
+
+  const layout =
+    canteenLayouts[id];
+
+
+  if (!layout) return;
+
+
+  $('canteen-name').textContent =
+    layout.name;
+
+
+  $('canteen-desc').textContent =
+    layout.desc;
+
+
+  const list =
+    $('product-list');
+
+
+  const filtered =
+    products.filter(
+      p => Number(p.canteenId) === Number(id)
+    );
+
+
+  if (filtered.length === 0) {
+
+    list.innerHTML = `
+      <div class="col-span-full text-center py-10">
+
+        <i class="ri-restaurant-line text-4xl text-slate-300"></i>
+
+        <p class="text-slate-400 italic mt-2">
+          Belum ada menu yang dijual di kantin ini.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  list.innerHTML = '';
+
+
+  filtered.forEach(p => {
+
+    const card =
+      document.createElement('div');
+
+
+    card.className =
+      'bg-white rounded-xl border border-slate-200 overflow-hidden canteen-card flex flex-col justify-between';
+
+
+    const image =
+      document.createElement('img');
+
+
+    image.className =
+      'product-image';
+
+
+    image.alt =
+      p.name;
+
+
+    image.src =
+      p.img ||
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
+
+
+    image.onerror = function () {
+
+      this.src =
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
+
+    };
+
+
+    const content =
+      document.createElement('div');
+
+
+    content.innerHTML = `
+      <div class="p-4">
+
+        <h4 class="font-bold text-slate-800 text-base mb-1">
+          ${escapeHTML(p.name)}
+        </h4>
+
+        <p class="text-emerald-600 font-extrabold text-sm">
+          Rp ${Number(p.price).toLocaleString('id-ID')}
+        </p>
+
+      </div>
+    `;
+
+
+    const top =
+      document.createElement('div');
+
+
+    top.appendChild(image);
+
+    top.appendChild(content);
+
+    card.appendChild(top);
+
+
+    const canDelete =
+      currentRole === 'admin' ||
+      currentRole === `kantin${id}`;
+
+
+    if (canDelete) {
+
+      const footer =
+        document.createElement('div');
+
+
+      footer.className =
+        'p-3 bg-slate-50 border-t border-slate-100 flex justify-end';
+
+
+      const button =
+        document.createElement('button');
+
+
+      button.type = 'button';
+
+      button.className =
+        'text-rose-600 hover:text-rose-800 text-xs font-semibold flex items-center gap-1';
+
+
+      button.innerHTML = `
+        <i class="ri-delete-bin-line"></i>
+        <span>Hapus</span>
+      `;
+
+
+      button.addEventListener('click', () => {
+
+        deleteProduct(p.id);
+
+      });
+
+
+      footer.appendChild(button);
+
+      card.appendChild(footer);
+
+    }
+
+
+    list.appendChild(card);
+
+  });
+
+}
+
+
+// ==========================================
+// 15. STATISTIK ADMIN
+// ==========================================
+
+function renderAdminStats() {
+
+  const stats =
+    $('admin-stats');
+
+
+  if (!stats) return;
+
+
+  stats.innerHTML = '';
+
+
+  for (let i = 1; i <= 6; i++) {
+
+    const count =
+      products.filter(
+        p => Number(p.canteenId) === i
+      ).length;
+
+
+    stats.innerHTML += `
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+
+        <div class="font-bold text-slate-800 text-sm">
+          Kantin ${i}
+        </div>
+
+        <div class="text-xs text-slate-500 font-medium mt-0.5">
+          ${count} Menu
+        </div>
+
+      </div>
+    `;
+
+  }
+
+}
+
+
+// ==========================================
+// 16. GANTI ROLE
+// ==========================================
+
 function changeRole(role) {
+
   currentRole = role;
-  const roleDisplay = document.getElementById('role-display');
-  if (roleDisplay) roleDisplay.innerText = `Role: ${role.toUpperCase()}`;
 
-  const adminPage = document.getElementById('page-admin');
-  const ownerPage = document.getElementById('page-owner');
 
-  if (adminPage) adminPage.classList.add('hidden');
-  if (ownerPage) ownerPage.classList.add('hidden');
+  $('role-display').textContent =
+    `Role: ${role.toUpperCase()}`;
+
+
+  const adminPage =
+    $('page-admin');
+
+
+  const ownerPage =
+    $('page-owner');
+
+
+  adminPage.classList.add('hidden');
+
+  ownerPage.classList.add('hidden');
+
 
   if (role === 'admin') {
-    if (adminPage) adminPage.classList.remove('hidden');
+
+    adminPage.classList.remove('hidden');
+
     renderAdminStats();
-  } else if (role.startsWith('kantin')) {
-    const canteenNum = parseInt(role.replace('kantin', ''));
-    if (ownerPage) ownerPage.classList.remove('hidden');
-    const ownerTitle = document.getElementById('owner-title');
-    if (ownerTitle) ownerTitle.innerText = `Manajemen Menu (Kantin ${canteenNum})`;
-    selectCanteen(canteenNum);
+
   }
+
+
+  else if (role.startsWith('kantin')) {
+
+    const canteenNum =
+      parseInt(
+        role.replace('kantin', '')
+      );
+
+
+    ownerPage.classList.remove('hidden');
+
+
+    $('owner-title').textContent =
+      `Manajemen Menu (Kantin ${canteenNum})`;
+
+
+    selectCanteen(canteenNum);
+
+  }
+
+
+  else {
+
+    selectCanteen(activeCanteen);
+
+  }
+
 
   renderCanteen(activeCanteen);
+
 }
 
-function renderAdminStats() {
-  const stats = document.getElementById('admin-stats');
-  if (!stats) return;
-  
-  stats.innerHTML = '';
-  for (let i = 1; i <= 6; i++) {
-    const count = products.filter(p => p.canteenId === i).length;
-    stats.innerHTML += `
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
-        <div class="font-bold text-slate-800 text-sm">Kantin ${i}</div>
-        <div class="text-xs text-slate-500 font-medium mt-0.5">${count} Menu</div>
-      </div>
-    `;
-  }
-}
-
-// Inisialisasi awal
-document.addEventListener('DOMContentLoaded', () => {
-  renderTabs();
-  fetchProducts();
-});// ==========================================
-// 1. KONFIGURASI SUPABASE
-// ==========================================
-const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d3ZhZ3R1eWVycWptcWtrbXRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjIxMTAsImV4cCI6MjEwNDM5ODExMH0.jkJAEQ9Hvj-_LgF8g0XYEOs7ScVySlG8aYqT1K-UC1A'; 
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ==========================================
-// 2. DATA KANTIN & STATE APLIKASI
+// 17. ESCAPE HTML
 // ==========================================
-const canteenLayouts = {
-  1: { name: "Kantin 1 - Spesialis Nasi & Berat", desc: "Menyediakan aneka nasi olahan segar dan lauk pauk." },
-  2: { name: "Kantin 2 - Bebakaran & Mie", desc: "Spesialis Mie Goreng, Rebus, dan Bakaran Pedas." },
-  3: { name: "Kantin 3 - Snack & Cold Drink", desc: "Tempat nongkrong dengan es boba, kopi, dan camilan renyah." },
-  4: { name: "Kantin 4 - Masakan Rumahan", desc: "Menu prasmanan sehat dan hemat kantong mahasiswa/siswa." },
-  5: { name: "Kantin 5 - Western & Fast Food", desc: "Burger, Dimsum, Kentang Goreng, dan Milkshake." },
-  6: { name: "Kantin 6 - Jus & Buah Segar", desc: "Jus buah murni, es buah, dan salad sehat." }
-};
 
-let products = [];
-let currentRole = 'guest';
-let activeCanteen = 1;
+function escapeHTML(text) {
 
-// ==========================================
-// 3. TOGGLE TAB LOGIN & REGISTER
-// ==========================================
-function switchAuthTab(tab) {
-  const loginForm = document.getElementById('form-login');
-  const registerForm = document.getElementById('form-register');
-  const loginBtn = document.getElementById('tab-login-btn');
-  const registerBtn = document.getElementById('tab-register-btn');
+  const div =
+    document.createElement('div');
 
-  if (tab === 'login') {
-    loginForm.classList.remove('hidden');
-    registerForm.classList.add('hidden');
-    loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition";
-    registerBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition";
-  } else {
-    loginForm.classList.add('hidden');
-    registerForm.classList.remove('hidden');
-    registerBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-emerald-600 shadow-sm transition";
-    loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition";
-  }
+  div.textContent =
+    text;
+
+  return div.innerHTML;
+
 }
+
 
 // ==========================================
-// 4. LOGIKA AUTHENTICATION (SIGN UP & SIGN IN)
+// 18. EVENT LISTENERS
 // ==========================================
-async function handleSignUp(e) {
-  e.preventDefault();
-  const name = document.getElementById('reg-name').value.trim();
-  const username = document.getElementById('reg-username').value.trim();
-  const studentClass = document.getElementById('reg-class').value;
-  const email = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value.trim();
-  const submitBtn = document.getElementById('btn-register-submit');
-
-  submitBtn.innerText = 'Memproses...';
-  submitBtn.disabled = true;
-
-  try {
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        data: {
-          full_name: name,
-          username: username,
-          student_class: studentClass,
-          role: 'siswa'
-        }
-      }
-    });
-
-    if (error) {
-      alert(`Gagal Mendaftar: ${error.message}`);
-      return;
-    }
-
-    document.getElementById('form-register').reset();
-    
-    if (data.user && !data.session) {
-      alert(`Pendaftaran Berhasil! Silakan cek email kamu untuk melihat kode OTP.`);
-      showOtpForm(email);
-    } else {
-      alert(`Pendaftaran Berhasil! Selamat datang ${name} (${studentClass}).`);
-      enterApp(`Siswa: ${username} (${studentClass})`);
-    }
-  } catch (err) {
-    console.error("Error signup:", err);
-    alert("Terjadi kesalahan saat mendaftar: " + err.message);
-  } finally {
-    submitBtn.innerText = 'Daftar Aku';
-    submitBtn.disabled = false;
-  }
-}
-
-function showOtpForm(email) {
-  document.getElementById('form-register').classList.add('hidden');
-  document.getElementById('form-login').classList.add('hidden');
-  
-  const tabsContainer = document.getElementById('auth-tabs-container');
-  const authDivider = document.getElementById('auth-divider');
-  const guestBtn = document.getElementById('btn-guest-container');
-  
-  if (tabsContainer) tabsContainer.classList.add('hidden');
-  if (authDivider) authDivider.classList.add('hidden');
-  if (guestBtn) guestBtn.classList.add('hidden');
-
-  const otpPortal = document.getElementById('otp-portal');
-  if (otpPortal) {
-    otpPortal.classList.remove('hidden');
-    document.getElementById('otp-email').value = email;
-  }
-}
-
-async function handleVerifyOtp() {
-  const email = document.getElementById('otp-email').value.trim();
-  const token = document.getElementById('otp-code').value.trim();
-  const submitBtn = document.getElementById('btn-verify-otp');
-
-  if (!token || token.length !== 6) {
-    alert("Masukkan 6 digit kode OTP yang valid!");
-    return;
-  }
-
-  submitBtn.innerText = 'Memverifikasi...';
-  submitBtn.disabled = true;
-
-  try {
-    const { data, error } = await supabaseClient.auth.verifyOtp({
-      email: email,
-      token: token,
-      type: 'signup'
-    });
-
-    if (error) {
-      alert(`Gagal Verifikasi: ${error.message}`);
-    } else {
-      alert("Verifikasi Berhasil! Kamu sekarang sudah masuk.");
-      document.getElementById('otp-portal').classList.add('hidden');
-      enterApp(`Siswa: ${email}`);
-    }
-  } catch (err) {
-    console.error("Error OTP:", err);
-    alert("Terjadi masalah saat verifikasi OTP.");
-  } finally {
-    submitBtn.innerText = 'Verifikasi Kode';
-    submitBtn.disabled = false;
-  }
-}
-
-async function handleSignIn(e) {
-  e.preventDefault();
-  const userInput = document.getElementById('login-email').value.trim();
-  const passwordInput = document.getElementById('login-password').value.trim();
-  const submitBtn = document.getElementById('btn-login-submit');
-
-  submitBtn.innerText = 'Memeriksa...';
-  submitBtn.disabled = true;
-
-  try {
-    // 1. Cek ke tabel kantin_users
-    const { data: userAccount, error: dbError } = await supabaseClient
-      .from('kantin_users')
-      .select('*')
-      .eq('username', userInput)
-      .eq('password', passwordInput)
-      .maybeSingle();
-
-    if (userAccount) {
-      document.getElementById('form-login').reset();
-      
-      // BIKIN ROLE OTOMATIS DARI kantin_id 
-      // Jika kantin_id 0 atau username 'admin', jadikan admin. Sisanya jadikan kantin1, kantin2, dll.
-      let assignedRole = 'guest';
-      if (userAccount.kantin_id === 0 || userAccount.username.toLowerCase() === 'admin') {
-        assignedRole = 'admin';
-      } else {
-        assignedRole = 'kantin' + userAccount.kantin_id;
-      }
-      
-      enterApp(assignedRole);
-      return;
-    }
-
-    // 2. Cek Login Siswa via Supabase Auth
-    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-      email: userInput,
-      password: passwordInput,
-    });
-
-    if (authError) {
-      alert("Username/Email atau Password salah!");
-    } else {
-      document.getElementById('form-login').reset();
-      const meta = authData.user?.user_metadata;
-      const displayName = meta?.username || meta?.full_name || authData.user?.email || 'Siswa';
-      const displayClass = meta?.student_class ? ` - ${meta.student_class}` : '';
-      
-      enterApp(`Siswa: ${displayName}${displayClass}`);
-    }
-
-  } catch (err) {
-    console.error("Error detail:", err);
-    alert("Gagal terhubung ke database: " + err.message);
-  } finally {
-    submitBtn.innerText = 'Masuk ke System';
-    submitBtn.disabled = false;
-  }
-}
-
-function loginGuest() {
-  enterApp('guest');
-}
-
-function enterApp(role) {
-  document.getElementById('login-portal').classList.add('hidden');
-  document.getElementById('main-app').classList.remove('hidden');
-  changeRole(role);
-}
-
-async function logout() {
-  await supabaseClient.auth.signOut();
-  document.getElementById('main-app').classList.add('hidden');
-  document.getElementById('login-portal').classList.remove('hidden');
-}
-
-// ==========================================
-// 5. DATABASE & UI RENDER (SUPABASE CRUD)
-// ==========================================
-async function fetchProducts() {
-  const list = document.getElementById('product-list');
-  if (!list) return;
-  
-  list.innerHTML = `<p class="text-slate-400 col-span-full italic text-center py-8">Memuat data menu...</p>`;
-
-  try {
-    const { data, error } = await supabaseClient
-      .from('menu_kantin')
-      .select('*');
-
-    if (error) {
-      console.error('Gagal mengambil data:', error);
-      list.innerHTML = `<p class="text-rose-500 col-span-full font-semibold text-center py-8">Gagal memuat data dari Supabase.</p>`;
-      return;
-    }
-
-    // MAPPING KOLOM DISESUAIKAN DENGAN TABEL ASLI
-    products = (data || []).map(item => ({
-      id: item.id,
-      canteenId: item.kantin_id, // sebelumnya item.canteen_id
-      name: item.nama,           // sebelumnya item.name
-      price: item.harga,         // sebelumnya item.price
-      img: item.foto             // sebelumnya item.img
-    }));
-
-    renderCanteen(activeCanteen);
-    if (currentRole === 'admin') renderAdminStats();
-  } catch (err) {
-    console.error("Fetch error:", err);
-    list.innerHTML = `<p class="text-rose-500 col-span-full font-semibold text-center py-8">Koneksi terputus.</p>`;
-  }
-}
-
-async function handleAddProduct(e) {
-  e.preventDefault();
-  const canteenNum = parseInt(currentRole.replace('kantin', ''));
-  const name = document.getElementById('prod-name').value;
-  const price = parseInt(document.getElementById('prod-price').value);
-  const img = document.getElementById('prod-img').value;
-
-  // PENAMAAN KOLOM INSERT DISESUAIKAN
-  const { error } = await supabaseClient
-    .from('menu_kantin')
-    .insert([{ kantin_id: canteenNum, nama: name, harga: price, foto: img }]);
-
-  if (error) {
-    console.error('Gagal menambah menu:', error);
-    alert('Gagal menambah menu!');
-  } else {
-    document.getElementById('add-product-form').reset();
-    await fetchProducts();
-  }
-}
-
-async function deleteProduct(id) {
-  if (!confirm("Apakah Anda yakin ingin menghapus menu ini?")) return;
-
-  const { error } = await supabaseClient
-    .from('menu_kantin')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error('Gagal menghapus menu:', error);
-    alert('Gagal menghapus menu!');
-  } else {
-    await fetchProducts();
-  }
-}
-
-function renderTabs() {
-  const tabs = document.getElementById('kantin-tabs');
-  if (!tabs) return;
-  
-  tabs.innerHTML = '';
-  for (let i = 1; i <= 6; i++) {
-    const active = activeCanteen === i;
-    tabs.innerHTML += `
-      <button type="button" onclick="selectCanteen(${i})" class="px-4 py-2 font-semibold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap ${active ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">
-        Kantin ${i}
-      </button>
-    `;
-  }
-}
-
-function selectCanteen(id) {
-  activeCanteen = id;
-  renderTabs();
-  renderCanteen(id);
-}
-
-function renderCanteen(id) {
-  const layout = canteenLayouts[id];
-  const canteenNameEl = document.getElementById('canteen-name');
-  const canteenDescEl = document.getElementById('canteen-desc');
-  if (canteenNameEl) canteenNameEl.innerText = layout.name;
-  if (canteenDescEl) canteenDescEl.innerText = layout.desc;
-
-  const list = document.getElementById('product-list');
-  if (!list) return;
-
-  const filtered = products.filter(p => p.canteenId === id);
-
-  if (filtered.length === 0) {
-    list.innerHTML = `<p class="text-slate-400 col-span-full italic py-8 text-center">Belum ada menu yang dijual di kantin ini.</p>`;
-    return;
-  }
-
-  list.innerHTML = filtered.map(p => `
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden canteen-card flex flex-col justify-between">
-      <div>
-        <img src="${p.img || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'}" class="h-44 w-full object-cover" alt="${p.name}">
-        <div class="p-4">
-          <h4 class="font-bold text-slate-800 text-base mb-1">${p.name}</h4>
-          <p class="text-emerald-600 font-extrabold text-sm">Rp ${p.price.toLocaleString('id-ID')}</p>
-        </div>
-      </div>
-      ${(currentRole === `kantin${id}` || currentRole === 'admin') ? `
-        <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-          <button type="button" onclick="deleteProduct(${p.id})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold flex items-center space-x-1 cursor-pointer">
-            <i class="ri-delete-bin-line"></i>
-            <span>Hapus</span>
-          </button>
-        </div>
-      ` : ''}
-    </div>
-  `).join('');
-}
-
-function changeRole(role) {
-  const validRole = role || 'guest';
-  currentRole = validRole;
-  
-  const roleDisplay = document.getElementById('role-display');
-  if (roleDisplay) roleDisplay.innerText = `Role: ${validRole.toUpperCase()}`;
-
-  const adminPage = document.getElementById('page-admin');
-  const ownerPage = document.getElementById('page-owner');
-
-  if (adminPage) adminPage.classList.add('hidden');
-  if (ownerPage) ownerPage.classList.add('hidden');
-
-  if (validRole === 'admin') {
-    if (adminPage) adminPage.classList.remove('hidden');
-    renderAdminStats();
-  } else if (validRole.startsWith('kantin')) {
-    const canteenNum = parseInt(validRole.replace('kantin', ''));
-    if (ownerPage) ownerPage.classList.remove('hidden');
-    const ownerTitle = document.getElementById('owner-title');
-    if (ownerTitle) ownerTitle.innerText = `Manajemen Menu (Kantin ${canteenNum})`;
-    selectCanteen(canteenNum);
-  }
-
-  renderCanteen(activeCanteen);
-}
-
-function renderAdminStats() {
-  const stats = document.getElementById('admin-stats');
-  if (!stats) return;
-  
-  stats.innerHTML = '';
-  for (let i = 1; i <= 6; i++) {
-    const count = products.filter(p => p.canteenId === i).length;
-    stats.innerHTML += `
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
-        <div class="font-bold text-slate-800 text-sm">Kantin ${i}</div>
-        <div class="text-xs text-slate-500 font-medium mt-0.5">${count} Menu</div>
-      </div>
-    `;
-  }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  $('auth-form')
+    .addEventListener(
+      'submit',
+      handleAuthSubmit
+    );
+
+
+  $('guest-login')
+    .addEventListener(
+      'click',
+      loginGuest
+    );
+
+
+  $('logout-btn')
+    .addEventListener(
+      'click',
+      logout
+    );
+
+
+  $('add-product-form')
+    .addEventListener(
+      'submit',
+      handleAddProduct
+    );
+
+
   renderTabs();
+
   fetchProducts();
+
 });
