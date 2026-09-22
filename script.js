@@ -47,8 +47,6 @@ function switchAuthTab(tab) {
 // ==========================================
 // 4. LOGIKA AUTHENTICATION (SIGN UP & SIGN IN)
 // ==========================================
-
-// --- PROSES SIGN UP (DAFTAR AKUN SISWA) ---
 async function handleSignUp(e) {
   e.preventDefault();
   const name = document.getElementById('reg-name').value.trim();
@@ -98,7 +96,6 @@ async function handleSignUp(e) {
   }
 }
 
-// --- TAMPILKAN FORM OTP ---
 function showOtpForm(email) {
   document.getElementById('form-register').classList.add('hidden');
   document.getElementById('form-login').classList.add('hidden');
@@ -118,7 +115,6 @@ function showOtpForm(email) {
   }
 }
 
-// --- PROSES VERIFIKASI KODE OTP ---
 async function handleVerifyOtp() {
   const email = document.getElementById('otp-email').value.trim();
   const token = document.getElementById('otp-code').value.trim();
@@ -155,7 +151,6 @@ async function handleVerifyOtp() {
   }
 }
 
-// --- PROSES SIGN IN ---
 async function handleSignIn(e) {
   e.preventDefault();
   const userInput = document.getElementById('login-email').value.trim();
@@ -232,8 +227,9 @@ async function fetchProducts() {
   list.innerHTML = `<p class="text-slate-400 col-span-full italic text-center py-8">Memuat data menu...</p>`;
 
   try {
+    // Menggunakan nama tabel yang benar sesuai database kamu: menu_kantin
     const { data, error } = await supabaseClient
-      .from('products')
+      .from('menu_kantin')
       .select('*');
 
     if (error) {
@@ -266,7 +262,7 @@ async function handleAddProduct(e) {
   const img = document.getElementById('prod-img').value;
 
   const { error } = await supabaseClient
-    .from('products')
+    .from('menu_kantin')
     .insert([{ canteen_id: canteenNum, name: name, price: price, img: img }]);
 
   if (error) {
@@ -282,7 +278,7 @@ async function deleteProduct(id) {
   if (!confirm("Apakah Anda yakin ingin menghapus menu ini?")) return;
 
   const { error } = await supabaseClient
-    .from('products')
+    .from('menu_kantin')
     .delete()
     .eq('id', id);
 
@@ -354,9 +350,12 @@ function renderCanteen(id) {
 }
 
 function changeRole(role) {
-  currentRole = role;
+  // Pengaman jika role di tabel Supabase kosong (null/undefined)
+  const validRole = role || 'guest';
+  currentRole = validRole;
+  
   const roleDisplay = document.getElementById('role-display');
-  if (roleDisplay) roleDisplay.innerText = `Role: ${role.toUpperCase()}`;
+  if (roleDisplay) roleDisplay.innerText = `Role: ${validRole.toUpperCase()}`;
 
   const adminPage = document.getElementById('page-admin');
   const ownerPage = document.getElementById('page-owner');
@@ -364,11 +363,11 @@ function changeRole(role) {
   if (adminPage) adminPage.classList.add('hidden');
   if (ownerPage) ownerPage.classList.add('hidden');
 
-  if (role === 'admin') {
+  if (validRole === 'admin') {
     if (adminPage) adminPage.classList.remove('hidden');
     renderAdminStats();
-  } else if (role.startsWith('kantin')) {
-    const canteenNum = parseInt(role.replace('kantin', ''));
+  } else if (validRole.startsWith('kantin')) {
+    const canteenNum = parseInt(validRole.replace('kantin', ''));
     if (ownerPage) ownerPage.classList.remove('hidden');
     const ownerTitle = document.getElementById('owner-title');
     if (ownerTitle) ownerTitle.innerText = `Manajemen Menu (Kantin ${canteenNum})`;
