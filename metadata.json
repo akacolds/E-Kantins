@@ -1,0 +1,8 @@
+{
+  "name": "E-Kantin",
+  "description": "Aplikasi E-Kantin Sekolah untuk pemesanan makanan tanpa antre panjang dengan status realtime dan obrolan pesanan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
