@@ -3,66 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Kantin Online</title>
+    <title>E-Kantin Elegan</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+    <!-- SETTING TEMA GLOBAL -->
+    <div class="theme-picker" title="Ubah Warna Tema">
+        🎨 <input type="color" id="theme-color" onchange="changeTheme(event)">
+    </div>
+
     <!-- HALAMAN LOGIN -->
     <div id="login-section" class="container">
-        <div class="card">
+        <div class="card login-card">
             <h2>Masuk E-Kantin</h2>
-            <select id="login-role">
-                <option value="murid">Murid / Pembeli</option>
-                <option value="kantin">Pemilik Kantin</option>
-                <option value="admin">Admin</option>
-            </select>
-            <input type="email" id="email" placeholder="Email Supabase...">
+            <p class="subtitle">Ketikan username (otomatis daftar jika baru)</p>
+            <input type="text" id="username" placeholder="Username (cth: andi, admin, kantin_bu_siti)...">
             <input type="password" id="password" placeholder="Password...">
-            <button onclick="login()">Masuk</button>
-            <p class="note">Isi email & pass, logic Supabase auth ada di app.js</p>
+            <button onclick="login()">Masuk / Daftar</button>
+            <small>Tip: Login pakai user "admin" jadi Admin, "kantin" jadi Kantin.</small>
         </div>
     </div>
 
     <!-- DASHBOARD MURID (PEMBELI) -->
     <div id="murid-section" class="container hidden">
-        <header>
+        <header class="card flex-header">
             <div class="profile-info">
-                <img id="murid-pfp" src="https://via.placeholder.com/50" alt="PFP" onclick="document.getElementById('upload-pfp').click()">
+                <img id="murid-pfp" src="https://ui-avatars.com/api/?name=Murid&background=random" alt="PFP" onclick="document.getElementById('upload-pfp').click()">
                 <input type="file" id="upload-pfp" hidden accept="image/*" onchange="updatePFP(event)">
-                <h2>Halo, Murid!</h2>
+                <div>
+                    <h2 id="murid-name">Halo, Pembeli!</h2>
+                    <small>Ketuk foto untuk ubah</small>
+                </div>
             </div>
-            <button onclick="logout()" class="btn-danger">Logout</button>
+            <button onclick="logout()" class="btn-outline">Keluar</button>
         </header>
 
         <div class="menu-list">
-            <h3>Daftar Makanan</h3>
-            <!-- Dummy Data Makanan -->
-            <div class="menu-card">
-                <h4>Nasi Goreng Spesial</h4>
-                <p>Rp 15.000 | Stok: 10</p>
-                <select><option>Pedas</option><option>Sedang</option><option>Tidak Pedas</option></select>
-                <input type="text" placeholder="Catatan (Cth: Tanpa bawang)">
-                <button onclick="pesanMakanan()">Pesan Sekarang</button>
-                <button onclick="bukaChat()" class="btn-chat">Chat Kantin</button>
+            <h3>Menu Kantin Tersedia</h3>
+            <div class="card menu-item">
+                <div class="menu-info">
+                    <h4>Nasi Goreng Spesial</h4>
+                    <p class="price">Rp 15.000 <span class="badge">Sisa: 10</span></p>
+                </div>
+                <div class="menu-action">
+                    <select><option>Pedas</option><option>Sedang</option><option>Tidak Pedas</option></select>
+                    <input type="text" placeholder="Catatan (Tanpa bawang, dll)">
+                    <div class="btn-group">
+                        <button onclick="pesanMakanan()">Pesan</button>
+                        <button onclick="bukaChat()" class="btn-alt">💬 Chat</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- DASHBOARD KANTIN -->
     <div id="kantin-section" class="container hidden">
-        <header class="kantin-header" id="kantin-banner" style="background-image: url('https://via.placeholder.com/800x200');">
+        <header class="kantin-header" id="kantin-banner">
             <div class="overlay">
-                <h2>Kantin Bu Siti</h2>
-                <button onclick="document.getElementById('upload-banner').click()">Ubah Banner</button>
-                <input type="file" id="upload-banner" hidden accept="image/*" onchange="updateBanner(event)">
-                <button onclick="logout()" class="btn-danger">Logout</button>
+                <h2 id="kantin-name">Kantin Dashboard</h2>
+                <div class="btn-group">
+                    <button onclick="document.getElementById('upload-banner').click()" class="btn-alt">Ubah Banner</button>
+                    <input type="file" id="upload-banner" hidden accept="image/*" onchange="updateBanner(event)">
+                    <button onclick="logout()" class="btn-danger">Keluar</button>
+                </div>
             </div>
         </header>
 
-        <div class="admin-panel">
+        <div class="grid-2">
             <div class="card">
                 <h3>Tambah Menu Baru</h3>
                 <input type="text" id="menu-nama" placeholder="Nama Makanan">
@@ -73,12 +83,12 @@
             </div>
 
             <div class="card">
-                <h3>Kelola Stok</h3>
+                <h3>Kelola Stok Cepat</h3>
                 <div class="stok-item">
-                    <span>Nasi Goreng Spesial (Stok: <span id="stok-1">10</span>)</span>
-                    <div>
-                        <button onclick="ubahStok(1, -1)">-</button>
-                        <button onclick="ubahStok(1, 1)">+</button>
+                    <span>Nasi Goreng (Stok: <b id="stok-1">10</b>)</span>
+                    <div class="btn-group">
+                        <button onclick="ubahStok(1, -1)" class="btn-alt">-</button>
+                        <button onclick="ubahStok(1, 1)" class="btn-alt">+</button>
                     </div>
                 </div>
             </div>
@@ -87,27 +97,27 @@
 
     <!-- DASHBOARD ADMIN -->
     <div id="admin-section" class="container hidden">
-        <header>
-            <h2>Admin E-Kantin Pusat</h2>
-            <button onclick="logout()" class="btn-danger">Logout</button>
+        <header class="card flex-header">
+            <h2>Panel Admin Pusat</h2>
+            <button onclick="logout()" class="btn-danger">Keluar</button>
         </header>
         <div class="card">
-            <h3>Monitoring Sistem</h3>
-            <p>Admin dapat melihat semua transaksi, mendaftarkan kantin baru, dan mengelola user di sini.</p>
+            <h3>Sistem E-Kantin Berjalan</h3>
+            <p>Akses pantau transaksi seluruh kantin dan user terdaftar ada di sini.</p>
         </div>
     </div>
 
     <!-- MODAL CHAT -->
     <div id="chat-modal" class="chat-modal hidden">
         <div class="chat-header">
-            <h4>Chat Live</h4>
-            <button onclick="tutupChat()">X</button>
+            <h4>Live Chat</h4>
+            <button onclick="tutupChat()" class="btn-text">✕</button>
         </div>
         <div class="chat-body" id="chat-box">
-            <div class="chat-msg bot">Silahkan tinggalkan pesan ke kantin...</div>
+            <div class="chat-msg bot">Pesan langsung ke kantin...</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="chat-text" placeholder="Ketik pesan...">
+            <input type="text" id="chat-text" placeholder="Ketik pesan..." onkeydown="if(event.key === 'Enter') kirimChat()">
             <button onclick="kirimChat()">Kirim</button>
         </div>
     </div>
