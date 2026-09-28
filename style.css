@@ -1,49 +1,74 @@
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-body { background: #f4f7f6; color: #333; }
+:root {
+    --primary: #2b6cb0; /* Warna utama default */
+    --primary-hover: #1a4979;
+    --bg: #f7fafc;
+    --surface: #ffffff;
+    --text: #2d3748;
+    --text-muted: #718096;
+    --border: #e2e8f0;
+    --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+body { background: var(--bg); color: var(--text); transition: background 0.3s; }
 .hidden { display: none !important; }
 
-.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.container { max-width: 800px; margin: 2rem auto; padding: 0 20px; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Theme Picker */
+.theme-picker { position: fixed; bottom: 20px; left: 20px; background: var(--surface); padding: 10px; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; z-index: 100; }
+.theme-picker input { width: 30px; height: 30px; border: none; cursor: pointer; padding: 0; background: none; }
 
 /* Cards & Forms */
-.card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
-button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
-button:hover { background: #0056b3; }
-.btn-danger { background: #dc3545; }
-.btn-chat { background: #28a745; }
+.card { background: var(--surface); padding: 24px; border-radius: var(--radius); box-shadow: 0 2px 15px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid var(--border); }
+.login-card { max-width: 400px; margin: 10vh auto; text-align: center; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
 
-/* Header Murid */
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); transition: 0.2s; }
+input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
+
+button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s; width: 100%; }
+button:hover { background: var(--primary-hover); }
+button.btn-alt { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+button.btn-alt:hover { border-color: var(--primary); }
+button.btn-danger { background: #fc8181; }
+button.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); width: auto; }
+button.btn-text { background: transparent; padding: 0; width: auto; color: inherit; }
+
+.btn-group { display: flex; gap: 10px; margin-top: 10px; }
+
+/* Headers */
+.flex-header { display: flex; justify-content: space-between; align-items: center; }
 .profile-info { display: flex; align-items: center; gap: 15px; }
-.profile-info img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #007bff; }
+.profile-info img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid var(--primary); transition: 0.2s; }
+.profile-info img:hover { filter: brightness(0.8); }
 
-/* Menu Makanan */
-.menu-list { display: grid; gap: 15px; }
-.menu-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #ff9800; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.menu-card h4 { color: #ff9800; }
+/* Grid Layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 
-/* Header Kantin (Banner) */
-.kantin-header { 
-    height: 150px; background-size: cover; background-position: center; 
-    border-radius: 12px; overflow: hidden; position: relative; margin-bottom: 20px;
-}
-.kantin-header .overlay { 
-    background: rgba(0,0,0,0.5); width: 100%; height: 100%; 
-    display: flex; justify-content: space-between; align-items: center; padding: 20px; color: white;
-}
+/* Menu Items */
+.menu-item { display: flex; flex-direction: column; gap: 15px; }
+.price { color: var(--primary); font-weight: bold; font-size: 1.1rem; }
+.badge { font-size: 0.8rem; background: var(--bg); padding: 4px 8px; border-radius: 20px; color: var(--text-muted); font-weight: normal; }
 
-/* Stok Kelola Kantin */
-.stok-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-.stok-item button { padding: 5px 15px; font-size: 16px; margin-left: 5px; }
+/* Kantin Banner */
+.kantin-header { height: 200px; background: linear-gradient(45deg, var(--primary), var(--primary-hover)); background-size: cover; background-position: center; border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; position: relative; }
+.kantin-header .overlay { background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 24px; color: white; }
+.kantin-header button { width: auto; }
 
-/* Chat Modal Floating */
-.chat-modal { position: fixed; bottom: 20px; right: 20px; width: 300px; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden;}
-.chat-header { background: #28a745; color: white; padding: 10px; display: flex; justify-content: space-between; }
-.chat-header button { background: none; padding: 0; color: white; font-weight: bold; }
-.chat-body { height: 250px; padding: 10px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 5px; }
-.chat-msg { padding: 8px 12px; border-radius: 15px; max-width: 80%; font-size: 14px; }
-.chat-msg.bot { background: #e9ecef; align-self: flex-start; }
-.chat-msg.me { background: #28a745; color: white; align-self: flex-end; }
-.chat-input { display: flex; padding: 10px; border-top: 1px solid #ddd; }
-.chat-input input { margin: 0; border-radius: 8px 0 0 8px; }
-.chat-input button { border-radius: 0 8px 8px 0; }
+/* Stok Item */
+.stok-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.stok-item button { width: 40px; padding: 8px; }
+
+/* Chat Modal */
+.chat-modal { position: fixed; bottom: 20px; right: 20px; width: 320px; background: var(--surface); border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; z-index: 50; }
+.chat-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+.chat-body { height: 300px; padding: 15px; overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { padding: 10px 15px; border-radius: 15px; max-width: 85%; font-size: 0.9rem; }
+.chat-msg.bot { background: var(--surface); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-msg.me { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.chat-input { display: flex; padding: 15px; border-top: 1px solid var(--border); background: var(--surface); gap: 10px; }
+.chat-input input { margin: 0; }
+.chat-input button { width: auto; padding: 10px 20px; }
