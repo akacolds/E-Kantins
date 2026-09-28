@@ -1,135 +1,69 @@
-// ================= DATA TEMPLATE STANDAR =================
-const DEFAULT_MENU_TEMPLATE = [
-    {
-        id: 1,
-        kantinId: 1,
-        namaKantin: "Kantin 1 (Bu Siti)",
-        nama: "Aneka Olahan Mie",
-        kategori: "Mie",
-        desc: "Pilihan: Aceh, Geprek, Rendang, Kuah Soto",
-        harga: 7000,
-        stok: 20,
-        foto: "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400",
-        varianList: ["Aceh", "Geprek", "Rendang", "Kuah Soto", "Goreng Original"]
-    },
-    {
-        id: 2,
-        kantinId: 1,
-        namaKantin: "Kantin 1 (Bu Siti)",
-        nama: "Aneka Minuman Segar",
-        kategori: "Minuman",
-        desc: "Pilihan minuman dingin menyegarkan",
-        harga: 3000,
-        stok: 30,
-        foto: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
-        varianList: ["Es Teh Manis", "Nutrisari Jeruk", "Kopi Susu Dingin"]
-    },
-    {
-        id: 3,
-        kantinId: 2,
-        namaKantin: "Kantin 2 (Pak Joko)",
-        nama: "Aneka Nasi & Ayam",
-        kategori: "Nasi",
-        desc: "Ayam Geprek, Nasi Campur Sayur",
-        harga: 12000,
-        stok: 15,
-        foto: "https://images.unsplash.com/photo-1562967914-608f82629710?w=400",
-        varianList: ["Nasi Ayam Geprek", "Nasi Campur Sayur", "Nasi Uduk"]
-    }
-];
+// ================= KONFIGURASI SUPABASE =================
+const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d3ZhZ3R1eWVycWptcWtrbXRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjIxMTAsImV4cCI6MjEwNDM5ODExMH0.jkJAEQ9Hvj-_LgF8g0XYEOs7ScVySlG8aYqT1K-UC1A';
 
-// ================= DATA PESANAN DUMMY =================
-const DUMMY_ORDERS = [
-    {
-        id: "101",
-        kantinId: 1,
-        namaPemesan: "Renold",
-        infoPemesan: "10 RPL C",
-        kodeUnikPemesan: "1234",
-        userKey: "renold_10 rpl c",
-        metode: "Take Away (Ambil di Kantin)",
-        namaMenu: "Aneka Olahan Mie",
-        varian: "Aceh",
-        qty: 1,
-        harga: 7000,
-        catatan: "Telur dadar ya bu, jangan terlalu pedas.",
-        waktu: "09:45",
-        status: "Sedang Dimasak",
-        chats: [
-            { sender: "kantin", text: "Siap Renold, segera dimasak", waktu: "09:46" }
-        ]
-    }
-];
+// Inisialisasi klien Supabase
+const { createClient } = supabase;
+const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ================= STATE MANAGEMENT =================
-let menuData = loadMenu();
-let orderData = loadOrders();
+// ================= STATE MANAGEMENT (DIPERBARUI KE SUPABASE) =================
+let menuData = [];
+let orderData = [];
 let currentUser = JSON.parse(localStorage.getItem('kantin_user_session')) || null;
 let itemDipilih = null;
 
-function loadMenu() {
-    const raw = localStorage.getItem('kantin_menu_store');
-    if (!raw) return DEFAULT_MENU_TEMPLATE;
+// Mengambil data menu dari tabel Supabase 'menu_kantin'
+async function loadMenu() {
     try {
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_MENU_TEMPLATE;
-    } catch {
-        return DEFAULT_MENU_TEMPLATE;
+        const { data, error } = await _supabase
+            .from('menu_kantin')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (error) throw error;
+        menuData = data && data.length > 0 ? data : [];
+        return menuData;
+    } catch (err) {
+        console.error('Gagal memuat menu dari Supabase:', err.message);
+        return [];
     }
 }
 
-function loadOrders() {
-    const raw = localStorage.getItem('kantin_orders_store');
-    if (!raw) return DUMMY_ORDERS;
+// Mengambil data pesanan dari tabel Supabase 'pesanan_kantin'
+async function loadOrders() {
     try {
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) && parsed.length > 0 ? parsed : DUMMY_ORDERS;
-    } catch {
-        return DUMMY_ORDERS;
+        const { data, error } = await _supabase
+            .from('pesanan_kantin')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (error) throw error;
+        orderData = data || [];
+        return orderData;
+    } catch (err) {
+        console.error('Gagal memuat pesanan dari Supabase:', err.message);
+        return [];
     }
 }
 
-function saveToStorage() {
-    localStorage.setItem('kantin_menu_store', JSON.stringify(menuData));
-    localStorage.setItem('kantin_orders_store', JSON.stringify(orderData));
+function saveUserSession() {
     localStorage.setItem('kantin_user_session', JSON.stringify(currentUser));
 }
 
-function muatUlangDataDummy() {
-    if (confirm("Reset ulang semua data menu dan pesanan ke data awal pengujian?")) {
-        localStorage.removeItem('kantin_menu_store');
-        localStorage.removeItem('kantin_orders_store');
+async function muatUlangDataDummy() {
+    if (confirm("Reset ulang sesi akun dan sinkronisasi data?")) {
         localStorage.removeItem('kantin_user_session');
-        localStorage.removeItem('kantin_registered_students');
-        menuData = DEFAULT_MENU_TEMPLATE;
-        orderData = DUMMY_ORDERS;
         currentUser = null;
-        saveToStorage();
         cekSesi();
-        alert("Data berhasil di-reset ke kondisi awal!");
+        await loadMenu();
+        await loadOrders();
+        alert("Sesi berhasil di-reset!");
     }
 }
 
 function formatRupiah(num) {
     return "Rp " + (num || 0).toLocaleString('id-ID');
 }
-
-// Sinkronisasi otomatis antar-tab secara real-time
-window.addEventListener('storage', (e) => {
-    if (e.key === 'kantin_orders_store' || e.key === 'kantin_menu_store') {
-        menuData = loadMenu();
-        orderData = loadOrders();
-        if (currentUser) {
-            if (currentUser.role === 'kantin') {
-                renderPesananKantin();
-                renderMenuKantin();
-            } else {
-                renderKatalogPembeli();
-                renderPesananPembeli();
-            }
-        }
-    }
-});
 
 // ================= SISTEM LOGIN DENGAN KODE UNIK SISWA =================
 function gantiTabLogin(tab) {
@@ -140,7 +74,7 @@ function gantiTabLogin(tab) {
     document.getElementById('form-login-kantin').classList.toggle('hidden', tab !== 'kantin');
 }
 
-function loginMurid(e) {
+async function loginMurid(e) {
     e.preventDefault();
     const nama = document.getElementById('input-nama-murid').value.trim();
     const kelas = document.getElementById('input-kelas-murid').value.trim();
@@ -152,16 +86,32 @@ function loginMurid(e) {
     }
 
     const userKey = nama.toLowerCase() + "_" + kelas.toLowerCase();
-    const registered = JSON.parse(localStorage.getItem('kantin_registered_students')) || {};
 
-    if (registered[userKey]) {
-        if (registered[userKey] !== kodeUnik) {
-            alert(`Kode unik salah untuk siswa "${nama}" (${kelas})!\nMasukkan kode unik yang Anda buat saat pertama kali mendaftar agar akun tidak tertukar.`);
-            return;
+    // Validasi atau simpan siswa ke Supabase (tabel 'registered_students')
+    try {
+        const { data: existing, error: fetchErr } = await _supabase
+            .from('registered_students')
+            .select('*')
+            .eq('user_key', userKey)
+            .maybeSingle();
+
+        if (fetchErr) throw fetchErr;
+
+        if (existing) {
+            if (existing.kode_unik !== kodeUnik) {
+                alert(`Kode unik salah untuk siswa "${nama}" (${kelas})!\nMasukkan kode unik yang benar.`);
+                return;
+            }
+        } else {
+            await _supabase.from('registered_students').insert([{
+                user_key: userKey,
+                nama: nama,
+                kelas: kelas,
+                kode_unik: kodeUnik
+            }]);
         }
-    } else {
-        registered[userKey] = kodeUnik;
-        localStorage.setItem('kantin_registered_students', JSON.stringify(registered));
+    } catch (err) {
+        console.error('Error validasi siswa:', err.message);
     }
 
     currentUser = {
@@ -172,8 +122,8 @@ function loginMurid(e) {
         userKey: userKey
     };
 
-    saveToStorage();
-    cekSesi();
+    saveUserSession();
+    await cekSesi();
 }
 
 function loginKantin(e) {
@@ -196,7 +146,7 @@ function loginKantin(e) {
     };
 
     currentUser = { role: "kantin", kantinId: kId, nama: mapNama[kId] };
-    saveToStorage();
+    saveUserSession();
     cekSesi();
 }
 
@@ -206,7 +156,7 @@ function logout() {
     cekSesi();
 }
 
-function cekSesi() {
+async function cekSesi() {
     const vLogin = document.getElementById('view-login');
     const vPembeli = document.getElementById('view-pembeli');
     const vKantin = document.getElementById('view-kantin');
@@ -225,6 +175,10 @@ function cekSesi() {
 
     userBar.classList.remove('hidden');
 
+    // Muat data terbaru dari Supabase sebelum merender tampilan
+    await loadMenu();
+    await loadOrders();
+
     if (currentUser.role === 'kantin') {
         userText.innerText = `Pemilik: ${currentUser.nama}`;
         vKantin.classList.remove('hidden');
@@ -239,26 +193,32 @@ function cekSesi() {
 }
 
 // ================= DASHBOARD MURID =================
-function switchPembeliView(view) {
+async function switchPembeliView(view) {
     document.getElementById('btn-tab-pembeli-menu').classList.toggle('active', view === 'menu');
     document.getElementById('btn-tab-pembeli-pesanan').classList.toggle('active', view === 'pesanan');
     document.getElementById('pembeli-view-menu').classList.toggle('hidden', view !== 'menu');
     document.getElementById('pembeli-view-pesanan').classList.toggle('hidden', view !== 'pesanan');
 
     if (view === 'menu') {
-        renderKatalogPembeli();
+        await renderKatalogPembeli();
     } else {
-        renderPesananPembeli();
+        await renderPesananPembeli();
     }
 }
 
-function renderKatalogPembeli() {
+async function renderKatalogPembeli() {
     const grid = document.getElementById('grid-menu-pembeli');
     const filter = document.getElementById('filter-kantin').value;
+    grid.innerHTML = "Memuat menu...";
+
+    await loadMenu();
+    const items = menuData.filter(m => filter === "all" || String(m.kantinId) === filter);
     grid.innerHTML = "";
 
-    menuData = loadMenu();
-    const items = menuData.filter(m => filter === "all" || String(m.kantinId) === filter);
+    if (items.length === 0) {
+        grid.innerHTML = `<p class="text-muted">Belum ada menu tersedia.</p>`;
+        return;
+    }
 
     items.forEach(item => {
         const habis = item.stok <= 0;
@@ -283,9 +243,8 @@ function renderKatalogPembeli() {
     });
 }
 
-// ================= MODAL PEMESANAN (HARGA TETAP) =================
+// ================= MODAL PEMESANAN =================
 function bukaModalPesan(itemId) {
-    menuData = loadMenu();
     itemDipilih = menuData.find(m => m.id === itemId);
     if (!itemDipilih || itemDipilih.stok <= 0) return;
 
@@ -295,13 +254,12 @@ function bukaModalPesan(itemId) {
     document.getElementById('input-jumlah-porsi').value = 1;
     document.getElementById('input-jumlah-porsi').max = itemDipilih.stok;
 
-    // Load Varian ke dalam select box tunggal
     const selectVarian = document.getElementById('select-varian-item');
     selectVarian.innerHTML = "";
     
     let varianArray = itemDipilih.varianList || ["Original"];
     if (typeof varianArray === 'string') {
-        varianArray = varianArray.split(',').map(v => v.trim());
+        try { varianArray = JSON.parse(varianArray); } catch { varianArray = varianArray.split(',').map(v => v.trim()); }
     }
 
     varianArray.forEach(v => {
@@ -313,7 +271,6 @@ function bukaModalPesan(itemId) {
 
     document.getElementById('modal-harga-menu').dataset.hargaDasar = itemDipilih.harga;
     updateTotalHargaPesan();
-    
     document.getElementById('modal-pesan').classList.remove('hidden');
 }
 
@@ -321,15 +278,8 @@ function updateTotalHargaPesan() {
     const qtyInput = document.getElementById('input-jumlah-porsi');
     let qty = parseInt(qtyInput.value, 10);
     
-    if (qty < 1 || isNaN(qty)) {
-        qty = 1;
-        qtyInput.value = 1;
-    }
-    if (qty > itemDipilih.stok) {
-        qty = itemDipilih.stok;
-        qtyInput.value = itemDipilih.stok;
-        alert(`Maksimal pesanan adalah sisa stok: ${itemDipilih.stok}`);
-    }
+    if (qty < 1 || isNaN(qty)) { qty = 1; qtyInput.value = 1; }
+    if (qty > itemDipilih.stok) { qty = itemDipilih.stok; qtyInput.value = itemDipilih.stok; }
 
     const hargaDasar = parseInt(document.getElementById('modal-harga-menu').dataset.hargaDasar, 10);
     const totalHarga = hargaDasar * qty;
@@ -343,7 +293,7 @@ function tutupModalPesan() {
     document.getElementById('modal-pesan').classList.add('hidden');
 }
 
-function konfirmasiKirimPesanan() {
+async function konfirmasiKirimPesanan() {
     if (!itemDipilih || itemDipilih.stok <= 0) return;
 
     const catatan = document.getElementById('input-catatan-pesan').value.trim();
@@ -351,47 +301,61 @@ function konfirmasiKirimPesanan() {
     const qty = parseInt(document.getElementById('input-jumlah-porsi').value, 10);
     const totalHarga = parseInt(document.getElementById('modal-harga-menu').dataset.currentTotal, 10) || (itemDipilih.harga * qty);
 
-    itemDipilih.stok -= qty;
+    const stokBaru = itemDipilih.stok - qty;
 
-    const orderBaru = {
-        id: String(Date.now()),
-        kantinId: parseInt(itemDipilih.kantinId, 10),
-        namaPemesan: currentUser.nama,
-        infoPemesan: currentUser.kelas,
-        kodeUnikPemesan: currentUser.kodeUnik,
-        userKey: currentUser.userKey,
-        metode: "Take Away (Ambil di Kantin)",
-        namaMenu: `${itemDipilih.nama}`,
-        qty: qty,
-        varian: varian,
-        harga: totalHarga,
-        catatan: catatan || "Tanpa catatan tambahan.",
-        waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        status: "Menunggu",
-        chats: []
-    };
+    try {
+        // 1. Kurangi stok di Supabase
+        const { error: errUpdate } = await _supabase
+            .from('menu_kantin')
+            .update({ stok: stokBaru })
+            .eq('id', itemDipilih.id);
 
-    orderData = loadOrders();
-    orderData.unshift(orderBaru);
-    saveToStorage();
-    tutupModalPesan();
-    renderKatalogPembeli();
-    alert(`Pesanan Take Away untuk "${itemDipilih.nama}" berhasil dikirim ke ${itemDipilih.namaKantin}!`);
+        if (errUpdate) throw errUpdate;
+
+        // 2. Simpan pesanan baru ke Supabase
+        const orderBaru = {
+            kantin_id: parseInt(itemDipilih.kantinId, 10),
+            nama_pemesan: currentUser.nama,
+            info_pemesan: currentUser.kelas,
+            kode_unik_pemesan: currentUser.kodeUnik,
+            user_key: currentUser.userKey,
+            metode: "Take Away (Ambil di Kantin)",
+            nama_menu: `${itemDipilih.nama}`,
+            qty: qty,
+            varian: varian,
+            harga: totalHarga,
+            catatan: catatan || "Tanpa catatan tambahan.",
+            waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            status: "Menunggu",
+            chats: []
+        };
+
+        const { error: errOrder } = await _supabase
+            .from('pesanan_kantin')
+            .insert([orderBaru]);
+
+        if (errOrder) throw errOrder;
+
+        tutupModalPesan();
+        await renderKatalogPembeli();
+        alert(`Pesanan Take Away untuk "${itemDipilih.nama}" berhasil dikirim ke ${itemDipilih.namaKantin}!`);
+    } catch (err) {
+        console.error('Gagal mengirim pesanan:', err.message);
+        alert('Terjadi kesalahan saat memproses pesanan.');
+    }
 }
 
-function renderPesananPembeli() {
+async function renderPesananPembeli() {
     const list = document.getElementById('list-pesanan-pembeli');
-    list.innerHTML = "";
+    list.innerHTML = "Memuat pesanan...";
 
-    orderData = loadOrders();
-    
+    await loadOrders();
     const myOrders = orderData.filter(p => {
-        if (p.userKey && currentUser.userKey) {
-            return p.userKey === currentUser.userKey;
-        }
-        return (p.namaPemesan || "").trim().toLowerCase() === (currentUser.nama || "").trim().toLowerCase();
+        if (p.user_key && currentUser.userKey) return p.user_key === currentUser.userKey;
+        return (p.nama_pemesan || "").trim().toLowerCase() === (currentUser.nama || "").trim().toLowerCase();
     });
 
+    list.innerHTML = "";
     if (myOrders.length === 0) {
         list.innerHTML = `<p class="text-muted">Belum ada riwayat pesanan untuk akun Anda (${currentUser.nama} - ${currentUser.kelas}).</p>`;
         return;
@@ -406,26 +370,29 @@ function renderPesananPembeli() {
         if (o.status === "Siap Diambil") badgeClass = "badge-selesai";
 
         let chatHTML = "";
-        if (o.chats && o.chats.length > 0) {
-            chatHTML = o.chats.map(c => {
+        let chatsArr = o.chats || [];
+        if (typeof chatsArr === 'string') { try { chatsArr = JSON.parse(chatsArr); } catch { chatsArr = []; } }
+
+        if (chatsArr.length > 0) {
+            chatHTML = chatsArr.map(c => {
                 const isSelf = (c.sender === 'murid');
                 return `
                     <div class="chat-bubble ${isSelf ? 'chat-self' : 'chat-other'}">
-                        <div class="chat-sender-label">${isSelf ? 'Saya (Anda)' : 'Penjual ' + getNamaKantinById(o.kantinId)}:</div>
+                        <div class="chat-sender-label">${isSelf ? 'Saya (Anda)' : 'Penjual ' + getNamaKantinById(o.kantin_id || o.kantinId)}:</div>
                         <div>${c.text}</div>
                         <div class="chat-time">${c.waktu}</div>
                     </div>
                 `;
             }).join('');
         } else {
-            chatHTML = `<span class="text-muted" style="font-size:11px;">Belum ada pesan dengan kantin. Ketik di bawah jika ingin bertanya ke penjual.</span>`;
+            chatHTML = `<span class="text-muted" style="font-size:11px;">Belum ada pesan dengan kantin.</span>`;
         }
 
         card.innerHTML = `
             <div class="order-top">
                 <div>
-                    <strong>${o.namaMenu} (${o.qty} Porsi)</strong> - ${formatRupiah(o.harga)}<br>
-                    <small class="text-muted">Kantin: ${getNamaKantinById(o.kantinId)} • Waktu: ${o.waktu}</small><br>
+                    <strong>${o.nama_menu} (${o.qty} Porsi)</strong> - ${formatRupiah(o.harga)}<br>
+                    <small class="text-muted">Kantin: ${getNamaKantinById(o.kantin_id || o.kantinId)} • Waktu: ${o.waktu}</small><br>
                     <span class="order-varian-box">Varian: ${o.varian}</span><br>
                     <span class="order-note-box">Catatan: "${o.catatan}"</span><br>
                     <span class="takeaway-tag">📦 ${o.metode}</span>
@@ -434,13 +401,12 @@ function renderPesananPembeli() {
                     <span class="badge-status ${badgeClass}">${o.status}</span>
                 </div>
             </div>
-
             <div class="chat-section">
                 <div class="chat-toggle-title">💬 Chat dengan Penjual Kantin:</div>
                 <div class="chat-history" id="chat-box-murid-${o.id}">${chatHTML}</div>
                 <div class="chat-form">
-                    <input type="text" id="input-chat-murid-${o.id}" placeholder="Ketik pesan untuk penjual..." onkeydown="if(event.key==='Enter') kirimPesanMurid('${o.id}')">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanMurid('${o.id}')">Kirim Pesan</button>
+                    <input type="text" id="input-chat-murid-${o.id}" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter') kirimPesanMurid('${o.id}')">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanMurid('${o.id}')">Kirim</button>
                 </div>
             </div>
         `;
@@ -448,76 +414,64 @@ function renderPesananPembeli() {
     });
 }
 
-function kirimPesanMurid(orderId) {
+async function kirimPesanMurid(orderId) {
     const input = document.getElementById(`input-chat-murid-${orderId}`);
     if (!input) return;
-
     const text = input.value.trim();
     if (!text) return;
 
-    orderData = loadOrders();
+    await loadOrders();
     const order = orderData.find(o => String(o.id) === String(orderId));
-    if (!order) {
-        alert("Pesanan tidak ditemukan!");
-        return;
-    }
+    if (!order) return;
 
-    if (!order.chats) order.chats = [];
+    let chatsArr = order.chats || [];
+    if (typeof chatsArr === 'string') { try { chatsArr = JSON.parse(chatsArr); } catch { chatsArr = []; } }
 
-    order.chats.push({
+    chatsArr.push({
         sender: "murid",
         text: text,
         waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     });
 
-    saveToStorage();
-    input.value = "";
-    renderPesananPembeli();
-
-    const box = document.getElementById(`chat-box-murid-${orderId}`);
-    if (box) box.scrollTop = box.scrollHeight;
+    try {
+        await _supabase.from('pesanan_kantin').update({ chats: chatsArr }).eq('id', orderId);
+        input.value = "";
+        await renderPesananPembeli();
+    } catch (err) {
+        console.error('Gagal kirim pesan:', err.message);
+    }
 }
 
 // ================= DASHBOARD PENJUAL KANTIN =================
-function switchKantinView(view) {
+async function switchKantinView(view) {
     document.getElementById('btn-tab-kantin-pesanan').classList.toggle('active', view === 'pesanan');
     document.getElementById('btn-tab-kantin-menu').classList.toggle('active', view === 'menu');
     document.getElementById('kantin-view-pesanan').classList.toggle('hidden', view !== 'pesanan');
     document.getElementById('kantin-view-menu').classList.toggle('hidden', view !== 'menu');
 
     if (view === 'pesanan') {
-        renderPesananKantin();
+        await renderPesananKantin();
     } else {
-        renderMenuKantin();
+        await renderMenuKantin();
     }
 }
 
-function renderPesananKantin() {
+async function renderPesananKantin() {
     const list = document.getElementById('list-pesanan-masuk');
     const filterStatusEl = document.getElementById('filter-status-pesanan');
     const filterStatus = filterStatusEl ? filterStatusEl.value : 'all';
-    list.innerHTML = "";
+    list.innerHTML = "Memuat pesanan...";
 
-    orderData = loadOrders();
-
+    await loadOrders();
     const targetKantinId = parseInt(currentUser.kantinId, 10);
     const masuk = orderData.filter(o => {
-        const cocokKantin = parseInt(o.kantinId, 10) === targetKantinId;
+        const kId = parseInt(o.kantin_id || o.kantinId, 10);
+        const cocokKantin = kId === targetKantinId;
         const cocokStatus = filterStatus === 'all' || o.status === filterStatus;
         return cocokKantin && cocokStatus;
     });
 
-    const countMenunggu = orderData.filter(o => parseInt(o.kantinId, 10) === targetKantinId && o.status !== 'Siap Diambil').length;
-    const badge = document.getElementById('badge-pesanan-kantin');
-    if (badge) {
-        if (countMenunggu > 0) {
-            badge.innerText = countMenunggu;
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
-    }
-
+    list.innerHTML = "";
     if (masuk.length === 0) {
         list.innerHTML = `<p class="text-muted">Belum ada pesanan masuk untuk kantin Anda.</p>`;
         return;
@@ -532,27 +486,30 @@ function renderPesananKantin() {
         if (o.status === "Siap Diambil") badgeClass = "badge-selesai";
 
         let chatHTML = "";
-        if (o.chats && o.chats.length > 0) {
-            chatHTML = o.chats.map(c => {
+        let chatsArr = o.chats || [];
+        if (typeof chatsArr === 'string') { try { chatsArr = JSON.parse(chatsArr); } catch { chatsArr = []; } }
+
+        if (chatsArr.length > 0) {
+            chatHTML = chatsArr.map(c => {
                 const isSelf = (c.sender === 'kantin');
                 return `
                     <div class="chat-bubble ${isSelf ? 'chat-self' : 'chat-other'}">
-                        <div class="chat-sender-label">${isSelf ? 'Saya (Penjual)' : o.namaPemesan + ' (' + o.infoPemesan + ')'}:</div>
+                        <div class="chat-sender-label">${isSelf ? 'Saya (Penjual)' : (o.nama_pemesan || o.namaPemesan) + ' (' + (o.info_pemesan || o.infoPemesan) + ')'}:</div>
                         <div>${c.text}</div>
                         <div class="chat-time">${c.waktu}</div>
                     </div>
                 `;
             }).join('');
         } else {
-            chatHTML = `<span class="text-muted" style="font-size:11px;">Belum ada obrolan. Balas di bawah untuk memberi info stok / konfirmasi.</span>`;
+            chatHTML = `<span class="text-muted" style="font-size:11px;">Belum ada obrolan.</span>`;
         }
 
         card.innerHTML = `
             <div class="order-top">
                 <div>
-                    <span class="badge-status badge-menunggu">Siswa: ${o.infoPemesan} (Kode: ${o.kodeUnikPemesan || '-'})</span>
-                    <h4 style="margin-top:5px;">${o.namaMenu} (${o.qty} Porsi) - ${formatRupiah(o.harga)}</h4>
-                    <p style="font-size:13px;">Pemesan: <strong>${o.namaPemesan}</strong> • Waktu: ${o.waktu}</p>
+                    <span class="badge-status badge-menunggu">Siswa: ${o.info_pemesan || o.infoPemesan} (Kode: ${o.kode_unik_pemesan || o.kodeUnikPemesan || '-'})</span>
+                    <h4 style="margin-top:5px;">${o.nama_menu || o.namaMenu} (${o.qty} Porsi) - ${formatRupiah(o.harga)}</h4>
+                    <p style="font-size:13px;">Pemesan: <strong>${o.nama_pemesan || o.namaPemesan}</strong> • Waktu: ${o.waktu}</p>
                     <span class="order-varian-box">Varian: ${o.varian}</span><br>
                     <span class="order-note-box">Catatan: "${o.catatan}"</span><br>
                     <span class="takeaway-tag">📦 ${o.metode}</span>
@@ -565,13 +522,12 @@ function renderPesananKantin() {
                     </div>
                 </div>
             </div>
-
             <div class="chat-section">
                 <div class="chat-toggle-title">💬 Balas Pesanan / Chat Murid:</div>
                 <div class="chat-history" id="chat-box-kantin-${o.id}">${chatHTML}</div>
                 <div class="chat-form">
-                    <input type="text" id="input-chat-kantin-${o.id}" placeholder="Ketik balasan untuk murid..." onkeydown="if(event.key==='Enter') kirimPesanKantin('${o.id}')">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanKantin('${o.id}')">Kirim Balasan</button>
+                    <input type="text" id="input-chat-kantin-${o.id}" placeholder="Balas pesan..." onkeydown="if(event.key==='Enter') kirimPesanKantin('${o.id}')">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="kirimPesanKantin('${o.id}')">Kirim</button>
                 </div>
             </div>
         `;
@@ -579,54 +535,55 @@ function renderPesananKantin() {
     });
 }
 
-function ubahStatusPesanan(orderId, statusBaru) {
-    orderData = loadOrders();
-    const order = orderData.find(o => String(o.id) === String(orderId));
-    if (order) {
-        order.status = statusBaru;
-        saveToStorage();
-        renderPesananKantin();
+async function ubahStatusPesanan(orderId, statusBaru) {
+    try {
+        await _supabase.from('pesanan_kantin').update({ status: statusBaru }).eq('id', orderId);
+        await renderPesananKantin();
+    } catch (err) {
+        console.error('Gagal update status:', err.message);
     }
 }
 
-function kirimPesanKantin(orderId) {
+async function kirimPesanKantin(orderId) {
     const input = document.getElementById(`input-chat-kantin-${orderId}`);
     if (!input) return;
-
     const text = input.value.trim();
     if (!text) return;
 
-    orderData = loadOrders();
+    await loadOrders();
     const order = orderData.find(o => String(o.id) === String(orderId));
     if (!order) return;
 
-    if (!order.chats) order.chats = [];
+    let chatsArr = order.chats || [];
+    if (typeof chatsArr === 'string') { try { chatsArr = JSON.parse(chatsArr); } catch { chatsArr = []; } }
 
-    order.chats.push({
+    chatsArr.push({
         sender: "kantin",
         text: text,
         waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     });
 
-    saveToStorage();
-    input.value = "";
-    renderPesananKantin();
-
-    const box = document.getElementById(`chat-box-kantin-${orderId}`);
-    if (box) box.scrollTop = box.scrollHeight;
+    try {
+        await _supabase.from('pesanan_kantin').update({ chats: chatsArr }).eq('id', orderId);
+        input.value = "";
+        await renderPesananKantin();
+    } catch (err) {
+        console.error('Gagal kirim pesan kantin:', err.message);
+    }
 }
 
-// ================= FITUR TAMBAH & KELOLA MENU (VARIAN KOMA) =================
-function renderMenuKantin() {
+// ================= KELOLA MENU KANTIN =================
+async function renderMenuKantin() {
     const grid = document.getElementById('grid-menu-kantin');
-    grid.innerHTML = "";
+    grid.innerHTML = "Memuat menu kantin...";
 
-    menuData = loadMenu();
+    await loadMenu();
     const targetKantinId = parseInt(currentUser.kantinId, 10);
-    const myMenu = menuData.filter(m => parseInt(m.kantinId, 10) === targetKantinId);
+    const myMenu = menuData.filter(m => parseInt(m.kantinId || m.kantin_id, 10) === targetKantinId);
 
+    grid.innerHTML = "";
     if (myMenu.length === 0) {
-        grid.innerHTML = `<p class="text-muted">Belum ada menu di kantin Anda. Klik "Tambah Menu Baru" di atas untuk menambahkan.</p>`;
+        grid.innerHTML = `<p class="text-muted">Belum ada menu di kantin Anda.</p>`;
         return;
     }
 
@@ -634,12 +591,12 @@ function renderMenuKantin() {
         const card = document.createElement('div');
         card.className = "menu-card";
         
-        // Pastikan array selalu valid
         let listStr = "Original";
-        if (Array.isArray(item.varianList)) {
-            listStr = item.varianList.join(", ");
-        } else if (typeof item.varianList === 'string') {
-            listStr = item.varianList;
+        let vList = item.varianList || item.varian_list;
+        if (Array.isArray(vList)) {
+            listStr = vList.join(", ");
+        } else if (typeof vList === 'string') {
+            listStr = vList;
         }
 
         card.innerHTML = `
@@ -678,72 +635,73 @@ function renderMenuKantin() {
     });
 }
 
-function updateVarianMenu(itemId, varianStr) {
-    menuData = loadMenu();
-    const item = menuData.find(m => m.id === itemId);
-    if (item) {
-        const arr = varianStr.split(',').map(v => v.trim()).filter(v => v !== "");
-        item.varianList = arr.length > 0 ? arr : ["Original"];
-        saveToStorage();
+async function updateVarianMenu(itemId, varianStr) {
+    const arr = varianStr.split(',').map(v => v.trim()).filter(v => v !== "");
+    const finalVarian = arr.length > 0 ? arr : ["Original"];
+    try {
+        await _supabase.from('menu_kantin').update({ varianList: finalVarian }).eq('id', itemId);
+    } catch (err) {
+        console.error('Gagal update varian:', err.message);
     }
 }
 
-function updateHargaMenu(itemId, hargaBaru) {
-    menuData = loadMenu();
-    const item = menuData.find(m => m.id === itemId);
-    if (item) {
-        item.harga = Math.max(0, parseInt(hargaBaru, 10) || 0);
-        saveToStorage();
+async function updateHargaMenu(itemId, hargaBaru) {
+    const val = Math.max(0, parseInt(hargaBaru, 10) || 0);
+    try {
+        await _supabase.from('menu_kantin').update({ harga: val }).eq('id', itemId);
+    } catch (err) {
+        console.error('Gagal update harga:', err.message);
     }
 }
 
-function updateStokMenu(itemId, delta) {
-    menuData = loadMenu();
+async function updateStokMenu(itemId, delta) {
     const item = menuData.find(m => m.id === itemId);
-    if (item) {
-        if (item.stok + delta < 0) {
-            alert("Stok tidak boleh minus!");
-            return;
-        }
-        item.stok += delta;
-        saveToStorage();
-        renderMenuKantin();
+    if (!item) return;
+    const stokBaru = item.stok + delta;
+    if (stokBaru < 0) { alert("Stok tidak boleh minus!"); return; }
+    
+    try {
+        await _supabase.from('menu_kantin').update({ stok: stokBaru }).eq('id', itemId);
+        await renderMenuKantin();
+    } catch (err) {
+        console.error('Gagal update stok:', err.message);
     }
 }
 
-function setStokManual(itemId, val) {
-    menuData = loadMenu();
-    const item = menuData.find(m => m.id === itemId);
-    if (item) {
-        item.stok = Math.max(0, parseInt(val, 10) || 0);
-        saveToStorage();
-        renderMenuKantin();
+async function setStokManual(itemId, val) {
+    const stokBaru = Math.max(0, parseInt(val, 10) || 0);
+    try {
+        await _supabase.from('menu_kantin').update({ stok: stokBaru }).eq('id', itemId);
+        await renderMenuKantin();
+    } catch (err) {
+        console.error('Gagal set stok manual:', err.message);
     }
 }
 
-function uploadFotoMenu(itemId, fileInput) {
+async function uploadFotoMenu(itemId, fileInput) {
     const file = fileInput.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        menuData = loadMenu();
-        const item = menuData.find(m => m.id === itemId);
-        if (item) {
-            item.foto = e.target.result;
-            saveToStorage();
-            renderMenuKantin();
+    reader.onload = async function(e) {
+        try {
+            await _supabase.from('menu_kantin').update({ foto: e.target.result }).eq('id', itemId);
+            await renderMenuKantin();
+        } catch (err) {
+            console.error('Gagal upload foto:', err.message);
         }
     };
     reader.readAsDataURL(file);
 }
 
-function hapusMenu(itemId) {
+async function hapusMenu(itemId) {
     if (confirm("Apakah Anda yakin ingin menghapus menu ini dari dagangan?")) {
-        menuData = loadMenu();
-        menuData = menuData.filter(m => m.id !== itemId);
-        saveToStorage();
-        renderMenuKantin();
+        try {
+            await _supabase.from('menu_kantin').delete().eq('id', itemId);
+            await renderMenuKantin();
+        } catch (err) {
+            console.error('Gagal hapus menu:', err.message);
+        }
     }
 }
 
@@ -761,7 +719,7 @@ function tutupModalTambahMenu() {
     document.getElementById('modal-tambah-menu').classList.add('hidden');
 }
 
-function simpanMenuBaru(e) {
+async function simpanMenuBaru(e) {
     e.preventDefault();
     const nama = document.getElementById('new-menu-nama').value.trim();
     const kategori = document.getElementById('new-menu-kategori').value;
@@ -775,36 +733,40 @@ function simpanMenuBaru(e) {
     const finalVarian = arrVarian.length > 0 ? arrVarian : ["Original"];
     const defaultFoto = "https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=400";
 
-    function proceedAdd(fotoUrl) {
-        menuData = loadMenu();
-        const newId = Date.now();
-        const newItem = {
-            id: newId,
-            kantinId: parseInt(currentUser.kantinId, 10),
-            namaKantin: currentUser.nama,
-            nama: nama,
-            kategori: kategori,
-            desc: desc,
-            harga: hargaDasar,
-            stok: stok,
-            foto: fotoUrl,
-            varianList: finalVarian
-        };
-        menuData.push(newItem);
-        saveToStorage();
-        tutupModalTambahMenu();
-        renderMenuKantin();
-        alert(`Menu baru "${nama}" berhasil ditambahkan!`);
+    async function proceedAdd(fotoUrl) {
+        try {
+            const newItem = {
+                kantin_id: parseInt(currentUser.kantinId, 10),
+                nama_kantin: currentUser.nama,
+                nama: nama,
+                kategori: kategori,
+                desc: desc,
+                harga: hargaDasar,
+                stok: stok,
+                foto: fotoUrl,
+                varianList: finalVarian
+            };
+
+            const { error } = await _supabase.from('menu_kantin').insert([newItem]);
+            if (error) throw error;
+
+            tutupModalTambahMenu();
+            await renderMenuKantin();
+            alert(`Menu baru "${nama}" berhasil ditambahkan ke Supabase!`);
+        } catch (err) {
+            console.error('Gagal menambah menu:', err.message);
+            alert('Gagal menyimpan menu baru.');
+        }
     }
 
     if (fotoFile) {
         const reader = new FileReader();
-        reader.onload = function(evt) {
-            proceedAdd(evt.target.result);
+        reader.onload = async function(evt) {
+            await proceedAdd(evt.target.result);
         };
         reader.readAsDataURL(fotoFile);
     } else {
-        proceedAdd(defaultFoto);
+        await proceedAdd(defaultFoto);
     }
 }
 
@@ -820,6 +782,6 @@ function getNamaKantinById(id) {
     return map[id] || `Kantin ${id}`;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    cekSesi();
+window.addEventListener('DOMContentLoaded', async () => {
+    await cekSesi();
 });
