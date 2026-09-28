@@ -1,37 +1,76 @@
 // ==========================================
-// 1. KONFIGURASI SUPABASE (Isi dengan link Vercel/Supabase mu)
+// INISIALISASI & TEMA
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Load saved theme
+    const savedColor = localStorage.getItem('ekantin_theme');
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        document.getElementById('theme-color').value = savedColor;
+    }
+});
+
+function changeTheme(event) {
+    const color = event.target.value;
+    document.documentElement.style.setProperty('--primary', color);
+    localStorage.setItem('ekantin_theme', color);
+}
+
+// ==========================================
+// SUPABASE KOSONGAN
+// ponytail: Karena request "ga pakai email, lgsg user login", kita akan memalsukan email
+// di belakang layar (cth: andi@kantin.local) agar Supabase Auth tetap jalan tanpa user tau.
 // ==========================================
 const SUPABASE_URL = 'https://bxwvagtuyerqjmqkkmta.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4d3ZhZ3R1eWVycWptcWtrbXRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjIxMTAsImV4cCI6MjEwNDM5ODExMH0.jkJAEQ9Hvj-_LgF8g0XYEOs7ScVySlG8aYqT1K-UC1A';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let currentUser = null; // Menyimpan data user login saat ini
+let currentUser = null;
 
 // ==========================================
-// 2. NAVIGASI / AUTHENTICATION
+// LOGIC LOGIN SUPER SIMPEL (Otomatis Role)
 // ==========================================
 async function login() {
-    const role = document.getElementById('login-role').value;
-    const email = document.getElementById('email').value;
+    let username = document.getElementById('username').value.trim().toLowerCase();
     const password = document.getElementById('password').value;
 
-    if (!email || !password) return alert("Isi email dan password");
+    if (!username || !password) return alert("Isi Username dan Password!");
 
-    // LOGIC ASLI SUPABASE (Uncomment jika supabase sudah diatur):
-    // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    // if (error) return alert(error.message);
-    // currentUser = data.user;
+    // Tentukan Role Otomatis dari kata kunci di Username
+    let role = 'pembeli';
+    if (username === 'admin') role = 'admin';
+    else if (username.includes('kantin')) role = 'kantin';
+
+    // Fake Email generator untuk konek ke Supabase
+    const fakeEmail = `${username}@ekantin.local`;
+
+    // MOCKUP LOGIN SEKARANG (Tanpa koneksi asli)
+    currentUser = { id: Date.now().toString(), username: username, role: role };
+
+    /* 
+    // CARA ASLI JIKA SUPABASE SUDAH AKTIF:
+    let { data, error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
     
-    // MOCKUP LOGIN untuk visual:
-    currentUser = { id: '123', role: role, email: email };
+    // Jika tidak ada akun (error), otomatis daftar (Sign Up) sesuai request "akun baru lgsg kesimpan"
+    if (error && error.message.includes('Invalid login')) {
+        const res = await supabase.auth.signUp({ email: fakeEmail, password });
+        if(!res.error) {
+            alert('Akun baru dibuat otomatis!');
+            data = res.data;
+        } else return alert(res.error.message);
+    }
+    currentUser = { ...data.user, role: role }; 
+    */
 
-    // Sembunyikan login
+    // Navigasi UI
     document.getElementById('login-section').classList.add('hidden');
-
-    // Tampilkan dashboard sesuai role
-    if (role === 'murid') {
+    
+    if (role === 'pembeli') {
+        document.getElementById('murid-name').innerText = `Halo, ${username}!`;
+        document.getElementById('murid-pfp').src = `https://ui-avatars.com/api/?name=${username}&background=random`;
         document.getElementById('murid-section').classList.remove('hidden');
     } else if (role === 'kantin') {
+        document.getElementById('kantin-name').innerText = `Dashboard ${username}`;
         document.getElementById('kantin-section').classList.remove('hidden');
     } else if (role === 'admin') {
         document.getElementById('admin-section').classList.remove('hidden');
@@ -39,103 +78,62 @@ async function login() {
 }
 
 function logout() {
-    // supabase.auth.signOut();
     currentUser = null;
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
     document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
     document.getElementById('login-section').classList.remove('hidden');
 }
 
 // ==========================================
-// 3. FITUR KANTIN: TAMBAH MENU & STOK
+// FITUR KANTIN
 // ==========================================
-async function tambahMenu() {
+function tambahMenu() {
     const nama = document.getElementById('menu-nama').value;
     const harga = document.getElementById('menu-harga').value;
-    const varianText = document.getElementById('menu-varian').value; // Cth: Pedas, Manis
-    const stok = document.getElementById('menu-stok').value;
-
-    const varianArray = varianText.split(',').map(v => v.trim()); 
-
-    if (!nama || !harga || !stok) return alert("Lengkapi data menu!");
-
-    // SUPABASE DB INSERT:
-    /*
-    const { error } = await supabase.from('menu').insert([
-        { kantin_id: currentUser.id, nama: nama, harga: harga, varian: varianArray.join(','), stok: stok }
-    ]);
-    if (error) alert("Gagal tambah menu");
-    else alert("Menu berhasil ditambah!");
-    */
-    alert(`Menu ${nama} berhasil ditambahkan dengan varian: ${varianArray.join(', ')}`);
-}
-
-async function ubahStok(menuId, jumlah) {
-    const stokSpan = document.getElementById(`stok-${menuId}`);
-    let stokSkrg = parseInt(stokSpan.innerText);
-    stokSkrg += jumlah;
-    if (stokSkrg < 0) stokSkrg = 0;
+    const varian = document.getElementById('menu-varian').value.split(',').map(v => v.trim());
+    if (!nama) return alert("Nama wajib diisi");
     
-    stokSpan.innerText = stokSkrg;
+    alert(`Menu disimpan!\nNama: ${nama}\nVarian: ${varian.join(' | ')}`);
+    // insert ke supabase...
+}
 
-    // SUPABASE UPDATE:
-    // await supabase.from('menu').update({ stok: stokSkrg }).eq('id', menuId);
+function ubahStok(id, jumlah) {
+    const stokEl = document.getElementById(`stok-${id}`);
+    let stok = parseInt(stokEl.innerText) + jumlah;
+    if(stok < 0) stok = 0;
+    stokEl.innerText = stok;
+    // update supabase...
+}
+
+function updateBanner(event) {
+    if(!event.target.files[0]) return;
+    const url = URL.createObjectURL(event.target.files[0]);
+    document.getElementById('kantin-banner').style.backgroundImage = `url('${url}')`;
 }
 
 // ==========================================
-// 4. UPLOAD GAMBAR (PFP & BANNER)
+// FITUR PEMBELI
 // ==========================================
-async function updatePFP(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Menampilkan preview di HTML lokal
-    const urlLokal = URL.createObjectURL(file);
-    document.getElementById('murid-pfp').src = urlLokal;
-
-    // SUPABASE STORAGE UPLOAD:
-    /*
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${currentUser.id}.${fileExt}`;
-    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
-    */
-    alert("Profile Picture Berhasil diubah!");
+function updatePFP(event) {
+    if(!event.target.files[0]) return;
+    const url = URL.createObjectURL(event.target.files[0]);
+    document.getElementById('murid-pfp').src = url;
 }
 
-async function updateBanner(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const urlLokal = URL.createObjectURL(file);
-    document.getElementById('kantin-banner').style.backgroundImage = `url('${urlLokal}')`;
-
-    // SUPABASE STORAGE UPLOAD BANNER:
-    /*
-    const fileName = `banner_${currentUser.id}.jpg`;
-    await supabase.storage.from('banners').upload(fileName, file, { upsert: true });
-    */
-    alert("Banner Kantin Berhasil diubah!");
-}
-
-// ==========================================
-// 5. FITUR MURID: PESAN & CHAT
-// ==========================================
 function pesanMakanan() {
-    // SUPABASE INSERT KE TABEL 'pesanan' dgn kolom catatan
-    alert("Pesanan berhasil dikirim ke kantin! Catatan kamu sudah disertakan.");
+    alert("Pesanan masuk! Kantin sedang menyiapkan makananmu.");
 }
 
 function bukaChat() { document.getElementById('chat-modal').classList.remove('hidden'); }
 function tutupChat() { document.getElementById('chat-modal').classList.add('hidden'); }
 
 function kirimChat() {
-    const text = document.getElementById('chat-text').value;
-    if (!text) return;
+    const input = document.getElementById('chat-text');
+    if (!input.value.trim()) return;
 
     const chatBox = document.getElementById('chat-box');
-    chatBox.innerHTML += `<div class="chat-msg me">${text}</div>`;
-    document.getElementById('chat-text').value = '';
+    chatBox.innerHTML += `<div class="chat-msg me">${input.value}</div>`;
+    input.value = '';
     chatBox.scrollTop = chatBox.scrollHeight;
-
-    // SUPABASE REALTIME CHAT INSERT:
-    // await supabase.from('chat').insert([{ pengirim_id: currentUser.id, penerima_id: 'KANTIN_ID', pesan: text }]);
 }
