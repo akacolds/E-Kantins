@@ -5,13 +5,14 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4mDuRGKRn_va09DOIe4wiQ_RIgO-1sd
 // Inisialisasi klien Supabase
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-// ================= STATE MANAGEMENT (DIPERBARUI KE SUPABASE) =================
+
+// ================= STATE MANAGEMENT =================
 let menuData = [];
 let orderData = [];
 let currentUser = JSON.parse(localStorage.getItem('kantin_user_session')) || null;
 let itemDipilih = null;
 
-// Mengambil data menu dari tabel Supabase 'menu_kantin'
+// Mengambil data menu dari Supabase
 async function loadMenu() {
     try {
         const { data, error } = await _supabase
@@ -28,7 +29,7 @@ async function loadMenu() {
     }
 }
 
-// Mengambil data pesanan dari tabel Supabase 'pesanan_kantin'
+// Mengambil data pesanan dari Supabase
 async function loadOrders() {
     try {
         const { data, error } = await _supabase
@@ -86,7 +87,6 @@ async function loginMurid(e) {
 
     const userKey = nama.toLowerCase() + "_" + kelas.toLowerCase();
 
-    // Validasi atau simpan siswa ke Supabase (tabel 'registered_students')
     try {
         const { data: existing, error: fetchErr } = await _supabase
             .from('registered_students')
@@ -162,30 +162,33 @@ async function cekSesi() {
     const userBar = document.getElementById('user-session-bar');
     const userText = document.getElementById('session-user-text');
 
+    if (!vLogin || !vPembeli || !vKantin) return;
+
     vLogin.classList.add('hidden');
     vPembeli.classList.add('hidden');
     vKantin.classList.add('hidden');
-    userBar.classList.add('hidden');
+    if (userBar) userBar.classList.add('hidden');
 
     if (!currentUser) {
         vLogin.classList.remove('hidden');
         return;
     }
 
-    userBar.classList.remove('hidden');
+    if (userBar) userBar.classList.remove('hidden');
 
-    // Muat data terbaru dari Supabase sebelum merender tampilan
     await loadMenu();
     await loadOrders();
 
     if (currentUser.role === 'kantin') {
-        userText.innerText = `Pemilik: ${currentUser.nama}`;
+        if (userText) userText.innerText = `Pemilik: ${currentUser.nama}`;
         vKantin.classList.remove('hidden');
-        document.getElementById('label-kantin-pesanan').innerText = `Pesanan Masuk - ${currentUser.nama}`;
-        document.getElementById('label-kantin-menu').innerText = `Kelola Menu & Stok - ${currentUser.nama}`;
+        const lblPesanan = document.getElementById('label-kantin-pesanan');
+        const lblMenu = document.getElementById('label-kantin-menu');
+        if (lblPesanan) lblPesanan.innerText = `Pesanan Masuk - ${currentUser.nama}`;
+        if (lblMenu) lblMenu.innerText = `Kelola Menu & Stok - ${currentUser.nama}`;
         switchKantinView('pesanan');
     } else {
-        userText.innerText = `🎓 Siswa: ${currentUser.nama} (${currentUser.kelas}) • Kode: ${currentUser.kodeUnik}`;
+        if (userText) userText.innerText = `🎓 Siswa: ${currentUser.nama} (${currentUser.kelas}) • Kode: ${currentUser.kodeUnik}`;
         vPembeli.classList.remove('hidden');
         switchPembeliView('menu');
     }
@@ -193,10 +196,15 @@ async function cekSesi() {
 
 // ================= DASHBOARD MURID =================
 async function switchPembeliView(view) {
-    document.getElementById('btn-tab-pembeli-menu').classList.toggle('active', view === 'menu');
-    document.getElementById('btn-tab-pembeli-pesanan').classList.toggle('active', view === 'pesanan');
-    document.getElementById('pembeli-view-menu').classList.toggle('hidden', view !== 'menu');
-    document.getElementById('pembeli-view-pesanan').classList.toggle('hidden', view !== 'pesanan');
+    const btnMenu = document.getElementById('btn-tab-pembeli-menu');
+    const btnPesanan = document.getElementById('btn-tab-pembeli-pesanan');
+    const viewMenu = document.getElementById('pembeli-view-menu');
+    const viewPesanan = document.getElementById('pembeli-view-pesanan');
+
+    if (btnMenu) btnMenu.classList.toggle('active', view === 'menu');
+    if (btnPesanan) btnPesanan.classList.toggle('active', view === 'pesanan');
+    if (viewMenu) viewMenu.classList.toggle('hidden', view !== 'menu');
+    if (viewPesanan) viewPesanan.classList.toggle('hidden', view !== 'pesanan');
 
     if (view === 'menu') {
         await renderKatalogPembeli();
@@ -207,11 +215,14 @@ async function switchPembeliView(view) {
 
 async function renderKatalogPembeli() {
     const grid = document.getElementById('grid-menu-pembeli');
-    const filter = document.getElementById('filter-kantin').value;
+    const filterEl = document.getElementById('filter-kantin');
+    if (!grid) return;
+
+    const filter = filterEl ? filterEl.value : "all";
     grid.innerHTML = "Memuat menu...";
 
     await loadMenu();
-    const items = menuData.filter(m => filter === "all" || String(m.kantinId) === filter);
+    const items = menuData.filter(m => filter === "all" || String(m.kantinId || m.kantin_id) === filter);
     grid.innerHTML = "";
 
     if (items.length === 0) {
@@ -228,7 +239,7 @@ async function renderKatalogPembeli() {
                 <img src="${item.foto}" alt="${item.nama}">
             </div>
             <div class="menu-content">
-                <span class="tag-kantin">${item.namaKantin} • [${item.kategori}]</span>
+                <span class="tag-kantin">${item.namaKantin || item.nama_kantin} • [${item.kategori}]</span>
                 <h4 class="menu-title">${item.nama}</h4>
                 <p class="menu-desc">${item.desc}</p>
                 <p class="menu-price">${formatRupiah(item.harga)}</p>
@@ -242,13 +253,12 @@ async function renderKatalogPembeli() {
     });
 }
 
-// ================= MODAL PEMESANAN =================
 function bukaModalPesan(itemId) {
     itemDipilih = menuData.find(m => m.id === itemId);
     if (!itemDipilih || itemDipilih.stok <= 0) return;
 
     document.getElementById('modal-nama-menu').innerText = `Pesan: ${itemDipilih.nama}`;
-    document.getElementById('modal-kantin-menu').innerText = `${itemDipilih.namaKantin} • Sistem Take Away`;
+    document.getElementById('modal-kantin-menu').innerText = `${itemDipilih.namaKantin || itemDipilih.nama_kantin} • Sistem Take Away`;
     document.getElementById('input-catatan-pesan').value = "";
     document.getElementById('input-jumlah-porsi').value = 1;
     document.getElementById('input-jumlah-porsi').max = itemDipilih.stok;
@@ -256,7 +266,7 @@ function bukaModalPesan(itemId) {
     const selectVarian = document.getElementById('select-varian-item');
     selectVarian.innerHTML = "";
     
-    let varianArray = itemDipilih.varianList || ["Original"];
+    let varianArray = itemDipilih.varianList || item.varian_list || ["Original"];
     if (typeof varianArray === 'string') {
         try { varianArray = JSON.parse(varianArray); } catch { varianArray = varianArray.split(',').map(v => v.trim()); }
     }
@@ -303,7 +313,6 @@ async function konfirmasiKirimPesanan() {
     const stokBaru = itemDipilih.stok - qty;
 
     try {
-        // 1. Kurangi stok di Supabase
         const { error: errUpdate } = await _supabase
             .from('menu_kantin')
             .update({ stok: stokBaru })
@@ -311,9 +320,8 @@ async function konfirmasiKirimPesanan() {
 
         if (errUpdate) throw errUpdate;
 
-        // 2. Simpan pesanan baru ke Supabase
         const orderBaru = {
-            kantin_id: parseInt(itemDipilih.kantinId, 10),
+            kantin_id: parseInt(itemDipilih.kantinId || itemDipilih.kantin_id, 10),
             nama_pemesan: currentUser.nama,
             info_pemesan: currentUser.kelas,
             kode_unik_pemesan: currentUser.kodeUnik,
@@ -337,7 +345,7 @@ async function konfirmasiKirimPesanan() {
 
         tutupModalPesan();
         await renderKatalogPembeli();
-        alert(`Pesanan Take Away untuk "${itemDipilih.nama}" berhasil dikirim ke ${itemDipilih.namaKantin}!`);
+        alert(`Pesanan Take Away untuk "${itemDipilih.nama}" berhasil dikirim!`);
     } catch (err) {
         console.error('Gagal mengirim pesanan:', err.message);
         alert('Terjadi kesalahan saat memproses pesanan.');
@@ -346,12 +354,14 @@ async function konfirmasiKirimPesanan() {
 
 async function renderPesananPembeli() {
     const list = document.getElementById('list-pesanan-pembeli');
+    if (!list) return;
     list.innerHTML = "Memuat pesanan...";
 
     await loadOrders();
     const myOrders = orderData.filter(p => {
-        if (p.user_key && currentUser.userKey) return p.user_key === currentUser.userKey;
-        return (p.nama_pemesan || "").trim().toLowerCase() === (currentUser.nama || "").trim().toLowerCase();
+        const uKey = p.user_key || p.userKey;
+        if (uKey && currentUser.userKey) return uKey === currentUser.userKey;
+        return (p.nama_pemesan || p.namaPemesan || "").trim().toLowerCase() === (currentUser.nama || "").trim().toLowerCase();
     });
 
     list.innerHTML = "";
@@ -390,7 +400,7 @@ async function renderPesananPembeli() {
         card.innerHTML = `
             <div class="order-top">
                 <div>
-                    <strong>${o.nama_menu} (${o.qty} Porsi)</strong> - ${formatRupiah(o.harga)}<br>
+                    <strong>${o.nama_menu || o.namaMenu} (${o.qty} Porsi)</strong> - ${formatRupiah(o.harga)}<br>
                     <small class="text-muted">Kantin: ${getNamaKantinById(o.kantin_id || o.kantinId)} • Waktu: ${o.waktu}</small><br>
                     <span class="order-varian-box">Varian: ${o.varian}</span><br>
                     <span class="order-note-box">Catatan: "${o.catatan}"</span><br>
@@ -443,10 +453,15 @@ async function kirimPesanMurid(orderId) {
 
 // ================= DASHBOARD PENJUAL KANTIN =================
 async function switchKantinView(view) {
-    document.getElementById('btn-tab-kantin-pesanan').classList.toggle('active', view === 'pesanan');
-    document.getElementById('btn-tab-kantin-menu').classList.toggle('active', view === 'menu');
-    document.getElementById('kantin-view-pesanan').classList.toggle('hidden', view !== 'pesanan');
-    document.getElementById('kantin-view-menu').classList.toggle('hidden', view !== 'menu');
+    const btnPesanan = document.getElementById('btn-tab-kantin-pesanan');
+    const btnMenu = document.getElementById('btn-tab-kantin-menu');
+    const viewPesanan = document.getElementById('kantin-view-pesanan');
+    const viewMenu = document.getElementById('kantin-view-menu');
+
+    if (btnPesanan) btnPesanan.classList.toggle('active', view === 'pesanan');
+    if (btnMenu) btnMenu.classList.toggle('active', view === 'menu');
+    if (viewPesanan) viewPesanan.classList.toggle('hidden', view !== 'pesanan');
+    if (viewMenu) viewMenu.classList.toggle('hidden', view !== 'menu');
 
     if (view === 'pesanan') {
         await renderPesananKantin();
@@ -458,6 +473,8 @@ async function switchKantinView(view) {
 async function renderPesananKantin() {
     const list = document.getElementById('list-pesanan-masuk');
     const filterStatusEl = document.getElementById('filter-status-pesanan');
+    if (!list) return;
+
     const filterStatus = filterStatusEl ? filterStatusEl.value : 'all';
     list.innerHTML = "Memuat pesanan...";
 
@@ -574,6 +591,7 @@ async function kirimPesanKantin(orderId) {
 // ================= KELOLA MENU KANTIN =================
 async function renderMenuKantin() {
     const grid = document.getElementById('grid-menu-kantin');
+    if (!grid) return;
     grid.innerHTML = "Memuat menu kantin...";
 
     await loadMenu();
@@ -751,7 +769,7 @@ async function simpanMenuBaru(e) {
 
             tutupModalTambahMenu();
             await renderMenuKantin();
-            alert(`Menu baru "${nama}" berhasil ditambahkan ke Supabase!`);
+            alert(`Menu baru "${nama}" berhasil ditambahkan!`);
         } catch (err) {
             console.error('Gagal menambah menu:', err.message);
             alert('Gagal menyimpan menu baru.');
